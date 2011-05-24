@@ -38,7 +38,7 @@
 **
 ****************************************************************************/
 
-#include <QtGui>
+#include <QtWidgets/QApplication>
 
 #include "audioinput.h"
 

@@ -2,7 +2,7 @@ HEADERS       = audiooutput.h
 SOURCES       = audiooutput.cpp \
                 main.cpp
 
-QT           += multimedia
+QT           += widgets multimedia
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/qtmultimedia/multimedia/audiooutput

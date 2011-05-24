@@ -42,7 +42,7 @@
 #define VIDEOITEM_H
 
 #include <QtMultimedia/QAbstractVideoSurface>
-#include <QtGui/QGraphicsItem>
+#include <QtWidgets/QGraphicsItem>
 
 class VideoItem
     : public QAbstractVideoSurface,

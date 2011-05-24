@@ -41,6 +41,13 @@
 #include "videoplayer.h"
 #include "videoitem.h"
 
+#include <QtWidgets/QGraphicsScene>
+#include <QtWidgets/QGraphicsView>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QSlider>
+#include <QtWidgets/QStyle>
+#include <QtWidgets/QFileDialog>
 #include <QtMultimedia>
 
 #ifndef QT_NO_OPENGL

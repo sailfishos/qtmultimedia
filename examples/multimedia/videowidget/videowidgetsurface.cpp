@@ -40,6 +40,7 @@
 
 #include "videowidgetsurface.h"
 
+#include <QtWidgets/QWidget>
 #include <QtMultimedia>
 
 VideoWidgetSurface::VideoWidgetSurface(QWidget *widget, QObject *parent)

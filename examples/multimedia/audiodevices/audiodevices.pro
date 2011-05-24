@@ -3,7 +3,7 @@ SOURCES       = audiodevices.cpp \
                 main.cpp
 FORMS        += audiodevicesbase.ui
 
-QT           += multimedia
+QT           += widgets multimedia
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/qtmultimedia/multimedia/audiodevices

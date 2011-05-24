@@ -2,7 +2,7 @@ HEADERS       = audioinput.h
 SOURCES       = audioinput.cpp \
                 main.cpp
 
-QT           += multimedia
+QT           += widgets multimedia
 
 # install
 target.path = $$[QT_INSTALL_EXAMPLES]/qtmultimedia/multimedia/audioinput

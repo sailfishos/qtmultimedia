@@ -42,6 +42,11 @@
 
 #include "videowidget.h"
 
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QStyle>
+#include <QtWidgets/QSlider>
 #include <QtMultimedia>
 
 VideoPlayer::VideoPlayer(QWidget *parent)

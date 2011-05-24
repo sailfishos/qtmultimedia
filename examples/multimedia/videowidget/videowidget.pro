@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += multimedia
+QT += widgets multimedia
 
 HEADERS = \
     videoplayer.h \

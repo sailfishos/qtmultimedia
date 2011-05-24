@@ -1,4 +1,4 @@
-QT += multimedia
+QT += widgets multimedia
 
 contains(QT_CONFIG, opengl): QT += opengl
 

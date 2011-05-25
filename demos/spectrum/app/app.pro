@@ -6,7 +6,7 @@ TEMPLATE = app
 
 TARGET = spectrum
 
-QT       += multimedia
+QT       += widgets multimedia
 
 SOURCES  += main.cpp \
             engine.cpp \

@@ -1,21 +1,20 @@
-%define _qtmodule_snapshot_version 5~5.0.0~alpha1
+%define _qtmodule_snapshot_version 5.0.0-beta1
 Name:       qt5-qtmultimedia
 Summary:    Qt Multimedia module
-Version:    %{_qtmodule_snapshot_version}
+Version:    5.0.0~beta1
 Release:    1%{?dist}
 Group:      Qt/Qt
 License:    LGPLv2.1 with exception or GPLv3
 URL:        http://qt.nokia.com
-Source0:    %{name}-%{version}.tar.gz
-Patch0:     disable_demos_and_examples.patch
-Patch1:     create_prl_and_pc_files.patch
+#Source0:    %{name}-%{version}.tar.xz
+Source0:    qtmultimedia-opensource-src-%{_qtmodule_snapshot_version}.tar.xz
 BuildRequires:  qt5-qtcore-devel
 BuildRequires:  qt5-qtgui-devel
 BuildRequires:  qt5-qtwidgets-devel
 BuildRequires:  qt5-qtopengl-devel
 BuildRequires:  qt5-qtnetwork-devel
-BuildRequires:  qt5-qtqml-devel
-BuildRequires:  qt5-qtqml-qtquick-devel
+BuildRequires:  qt5-qtdeclarative-devel
+BuildRequires:  qt5-qtdeclarative-qtquick-devel
 BuildRequires:  qt5-qmake
 BuildRequires:  pkgconfig(alsa)
 BuildRequires:  fdupes
@@ -40,13 +39,13 @@ mobile and embedded systems without rewriting the source code.
 .
 This package contains the QtMultimedia module development files
 
-%package -n qt5-qtqml-import-multimedia
+%package -n qt5-qtdeclarative-import-multimedia
 Summary:    QtQml multimedia import
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
-Requires:   qt5-qtqml
+Requires:   qt5-qtdeclarative
 
-%description -n qt5-qtqml-import-multimedia
+%description -n qt5-qtdeclarative-import-multimedia
 This package contains the Multimedia import for QtQml
 
 %package plugin-mediaservice-audioengine
@@ -70,10 +69,7 @@ This package contains the M3U playlist support
 #### Build section
 
 %prep
-%setup -q -n %{name}
-%patch0 -p1
-%patch1 -p1
-
+%setup -q -n qtmultimedia-opensource-src-%{_qtmodule_snapshot_version}
 
 %build
 export QTDIR=/usr/share/qt5
@@ -92,6 +88,11 @@ find %{buildroot}%{_libdir}/pkgconfig -type f -name '*.pc' \
 find %{buildroot}%{_libdir} -type f -name '*.prl' \
 -exec sed -i -e "/^QMAKE_PRL_BUILD_DIR/d;s/\(QMAKE_PRL_LIBS =\).*/\1/" {} \;
 #
+# We don't need qt5/Qt/
+rm -rf %{buildroot}/%{_includedir}/qt5/Qt
+
+
+
 %fdupes %{buildroot}/%{_includedir}
 
 
@@ -116,8 +117,8 @@ find %{buildroot}%{_libdir} -type f -name '*.prl' \
 %{_libdir}/libQtMultimedia.so.5.*
 %{_libdir}/libQtMultimediaWidgets.so.5
 %{_libdir}/libQtMultimediaWidgets.so.5.*
-%{_libdir}/libQtMultimediaQuick_p.so.1
-%{_libdir}/libQtMultimediaQuick_p.so.1.*
+%{_libdir}/libQtMultimediaQuick_p.so.5
+%{_libdir}/libQtMultimediaQuick_p.so.5.*
 
 %files devel
 %defattr(-,root,root,-)
@@ -133,7 +134,7 @@ find %{buildroot}%{_libdir} -type f -name '*.prl' \
 %{_libdir}/cmake/
 
 
-%files -n qt5-qtqml-import-multimedia
+%files -n qt5-qtdeclarative-import-multimedia
 %defattr(-,root,root,-)
 %{_libdir}/qt5/imports/QtMultimedia/
 

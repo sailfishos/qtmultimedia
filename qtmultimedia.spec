@@ -1,7 +1,7 @@
-%define _qtmodule_snapshot_version 5.0.0-beta1
+%define _qtmodule_snapshot_version 5.0.0
 Name:       qt5-qtmultimedia
 Summary:    Qt Multimedia module
-Version:    5.0.0~beta1
+Version:    5.0.0
 Release:    1%{?dist}
 Group:      Qt/Qt
 License:    LGPLv2.1 with exception or GPLv3
@@ -113,21 +113,21 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
 %files
 %defattr(-,root,root,-)
-%{_libdir}/libQtMultimedia.so.5
-%{_libdir}/libQtMultimedia.so.5.*
-%{_libdir}/libQtMultimediaWidgets.so.5
-%{_libdir}/libQtMultimediaWidgets.so.5.*
-%{_libdir}/libQtMultimediaQuick_p.so.5
-%{_libdir}/libQtMultimediaQuick_p.so.5.*
+%{_libdir}/libQt5Multimedia.so.5
+%{_libdir}/libQt5Multimedia.so.5.*
+%{_libdir}/libQt5MultimediaWidgets.so.5
+%{_libdir}/libQt5MultimediaWidgets.so.5.*
+%{_libdir}/libQt5MultimediaQuick_p.so.5
+%{_libdir}/libQt5MultimediaQuick_p.so.5.*
 
 %files devel
 %defattr(-,root,root,-)
-%{_libdir}/libQtMultimedia.so
-%{_libdir}/libQtMultimediaWidgets.so
-%{_libdir}/libQtMultimediaQuick_p.so
-%{_libdir}/libQtMultimedia.prl
-%{_libdir}/libQtMultimediaWidgets.prl
-%{_libdir}/libQtMultimediaQuick_p.prl
+%{_libdir}/libQt5Multimedia.so
+%{_libdir}/libQt5MultimediaWidgets.so
+%{_libdir}/libQt5MultimediaQuick_p.so
+%{_libdir}/libQt5Multimedia.prl
+%{_libdir}/libQt5MultimediaWidgets.prl
+%{_libdir}/libQt5MultimediaQuick_p.prl
 %{_libdir}/pkgconfig/*
 %{_includedir}/qt5/*
 %{_datadir}/qt5/mkspecs/
@@ -136,7 +136,7 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
 %files -n qt5-qtdeclarative-import-multimedia
 %defattr(-,root,root,-)
-%{_libdir}/qt5/imports/QtMultimedia/
+%{_libdir}/qt5/qml/QtMultimedia/
 
 %files plugin-mediaservice-audioengine
 %defattr(-,root,root,-)

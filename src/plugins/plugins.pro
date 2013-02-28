@@ -9,7 +9,7 @@ TEMPLATE = subdirs
 SUBDIRS += m3u
 
 android {
-   SUBDIRS += android
+   SUBDIRS += android opensles
 }
 
 blackberry {

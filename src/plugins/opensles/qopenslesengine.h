@@ -44,6 +44,9 @@
 
 #include <qglobal.h>
 #include <qaudio.h>
+#include <qlist.h>
+#include <qaudioformat.h>
+#include <SLES/OpenSLES.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -55,7 +58,16 @@ public:
 
     static QOpenSLESEngine *instance();
 
+    SLEngineItf slEngine() const { return m_engine; }
+
+    static SLDataFormat_PCM audioFormatToSLFormatPCM(const QAudioFormat &format);
+
     QList<QByteArray> availableDevices(QAudio::Mode mode) const;
+
+private:
+    SLObjectItf m_engineObject;
+    SLEngineItf m_engine;
+    SLObjectItf m_outputMix;
 };
 
 QT_END_NAMESPACE

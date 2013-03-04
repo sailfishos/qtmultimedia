@@ -41,6 +41,7 @@
 
 #include "qopenslesdeviceinfo.h"
 
+
 QT_BEGIN_NAMESPACE
 
 QOpenSLESDeviceInfo::QOpenSLESDeviceInfo(const QByteArray &device, QAudio::Mode mode)
@@ -51,12 +52,24 @@ QOpenSLESDeviceInfo::QOpenSLESDeviceInfo(const QByteArray &device, QAudio::Mode 
 
 bool QOpenSLESDeviceInfo::isFormatSupported(const QAudioFormat &format) const
 {
-    return false;
+    QOpenSLESDeviceInfo *that = const_cast<QOpenSLESDeviceInfo*>(this);
+    return that->supportedCodecs().contains(format.codec())
+            && that->supportedSampleRates().contains(format.sampleRate())
+            && that->supportedChannelCounts().contains(format.channelCount())
+            && that->supportedSampleSizes().contains(format.sampleSize())
+            && that->supportedByteOrders().contains(format.byteOrder())
+            && that->supportedSampleTypes().contains(format.sampleType());
 }
 
 QAudioFormat QOpenSLESDeviceInfo::preferredFormat() const
 {
-    return QAudioFormat();
+    QAudioFormat format;
+    format.setCodec(QStringLiteral("audio/pcm"));
+    format.setSampleSize(16);
+    format.setSampleType(QAudioFormat::SignedInt);
+    format.setSampleRate(m_mode == QAudio::AudioInput ? 16000 : 44100);
+    format.setChannelCount(m_mode == QAudio::AudioInput ? 1 : 2);
+    return format;
 }
 
 QString QOpenSLESDeviceInfo::deviceName() const
@@ -66,32 +79,46 @@ QString QOpenSLESDeviceInfo::deviceName() const
 
 QStringList QOpenSLESDeviceInfo::supportedCodecs()
 {
-    return QStringList();
+    return QStringList() << QStringLiteral("audio/pcm");
 }
 
 QList<int> QOpenSLESDeviceInfo::supportedSampleRates()
 {
-    return QList<int>();
+    if (m_mode == QAudio::AudioOutput) {
+        return QList<int>() << 8000 << 11025 << 12000 << 16000 << 22050
+                            << 24000 << 32000 << 44100 << 48000;
+    } else {
+        return QList<int>() << 16000;
+    }
 }
 
 QList<int> QOpenSLESDeviceInfo::supportedChannelCounts()
 {
-    return QList<int>();
+    if (m_mode == QAudio::AudioOutput)
+        return QList<int>() << 1 << 2;
+    else
+        return QList<int>() << 1;
 }
 
 QList<int> QOpenSLESDeviceInfo::supportedSampleSizes()
 {
-    return QList<int>();
+    if (m_mode == QAudio::AudioOutput)
+        return QList<int>() << 8 << 16;
+    else
+        return QList<int>() << 16;
 }
 
 QList<QAudioFormat::Endian> QOpenSLESDeviceInfo::supportedByteOrders()
 {
-    return QList<QAudioFormat::Endian>();
+    return QList<QAudioFormat::Endian>() << QAudioFormat::LittleEndian;
 }
 
 QList<QAudioFormat::SampleType> QOpenSLESDeviceInfo::supportedSampleTypes()
 {
-    return QList<QAudioFormat::SampleType>();
+    if (m_mode == QAudio::AudioOutput)
+        return QList<QAudioFormat::SampleType>() << QAudioFormat::SignedInt << QAudioFormat::UnSignedInt;
+    else
+        return QList<QAudioFormat::SampleType>() << QAudioFormat::SignedInt;
 }
 
 QT_END_NAMESPACE

@@ -41,17 +41,40 @@
 
 #include "qopenslesengine.h"
 
-#include <SLES/OpenSLES.h>
-#include <qlist.h>
+#define CheckError(message) if (result != SL_RESULT_SUCCESS) { qWarning(message); return; }
 
 Q_GLOBAL_STATIC(QOpenSLESEngine, openslesEngine);
 
 QOpenSLESEngine::QOpenSLESEngine()
+    : m_engineObject(0)
+    , m_engine(0)
+    , m_outputMix(0)
 {
+    SLresult result;
+
+    result = slCreateEngine(&m_engineObject, 0, 0, 0, 0, 0);
+    CheckError("Failed to create engine");
+
+    result = (*m_engineObject)->Realize(m_engineObject, SL_BOOLEAN_FALSE);
+    CheckError("Failed to realize engine");
+
+    result = (*m_engineObject)->GetInterface(m_engineObject, SL_IID_ENGINE, &m_engine);
+    CheckError("Failed to get engine interface");
+
+    result = (*m_engine)->CreateOutputMix(m_engine, &m_outputMix, 0, 0, 0);
+    CheckError("Failed to create output mix");
+
+    result = (*m_outputMix)->Realize(m_outputMix, SL_BOOLEAN_FALSE);
+    CheckError("Failed to realize output mix");
+
 }
 
 QOpenSLESEngine::~QOpenSLESEngine()
 {
+    if (m_outputMix)
+        (*m_outputMix)->Destroy(m_outputMix);
+    if (m_engineObject)
+        (*m_engineObject)->Destroy(m_engineObject);
 }
 
 QOpenSLESEngine *QOpenSLESEngine::instance()
@@ -59,7 +82,28 @@ QOpenSLESEngine *QOpenSLESEngine::instance()
     return openslesEngine();
 }
 
+SLDataFormat_PCM QOpenSLESEngine::audioFormatToSLFormatPCM(const QAudioFormat &format)
+{
+    SLDataFormat_PCM format_pcm;
+    format_pcm.formatType = SL_DATAFORMAT_PCM;
+    format_pcm.numChannels = format.channelCount();
+    format_pcm.samplesPerSec = format.sampleRate() * 1000;
+    format_pcm.bitsPerSample = format.sampleSize();
+    format_pcm.containerSize = format.sampleSize();
+    format_pcm.channelMask = (format.channelCount() == 1 ?
+                                  SL_SPEAKER_FRONT_CENTER :
+                                  SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT);
+    format_pcm.endianness = (format.byteOrder() == QAudioFormat::LittleEndian ?
+                                 SL_BYTEORDER_LITTLEENDIAN :
+                                 SL_BYTEORDER_BIGENDIAN);
+    return format_pcm;
+
+}
+
 QList<QByteArray> QOpenSLESEngine::availableDevices(QAudio::Mode mode) const
 {
-    return QList<QByteArray>();
+    Q_UNUSED(mode);
+    // The Android OpenSL implementation doesn't provide the SLAudioIODeviceCapabilities interface
+    // and therefore we can only use the default input and output devices.
+    return QList<QByteArray>() << "default";
 }

@@ -55,7 +55,6 @@ Q_GLOBAL_STATIC(QOpenSLESEngine, openslesEngine);
 QOpenSLESEngine::QOpenSLESEngine()
     : m_engineObject(0)
     , m_engine(0)
-    , m_outputMix(0)
 {
     SLresult result;
 
@@ -68,19 +67,11 @@ QOpenSLESEngine::QOpenSLESEngine()
     result = (*m_engineObject)->GetInterface(m_engineObject, SL_IID_ENGINE, &m_engine);
     CheckError("Failed to get engine interface");
 
-    result = (*m_engine)->CreateOutputMix(m_engine, &m_outputMix, 0, 0, 0);
-    CheckError("Failed to create output mix");
-
-    result = (*m_outputMix)->Realize(m_outputMix, SL_BOOLEAN_FALSE);
-    CheckError("Failed to realize output mix");
-
     checkSupportedInputFormats();
 }
 
 QOpenSLESEngine::~QOpenSLESEngine()
 {
-    if (m_outputMix)
-        (*m_outputMix)->Destroy(m_outputMix);
     if (m_engineObject)
         (*m_engineObject)->Destroy(m_engineObject);
 }

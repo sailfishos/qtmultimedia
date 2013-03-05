@@ -72,7 +72,6 @@ private:
 
     SLObjectItf m_engineObject;
     SLEngineItf m_engine;
-    SLObjectItf m_outputMix;
 
     QList<int> m_supportedInputChannelCounts;
     QList<int> m_supportedInputSampleRates;

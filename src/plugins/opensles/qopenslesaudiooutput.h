@@ -43,6 +43,10 @@
 #define QOPENSLESAUDIOOUTPUT_H
 
 #include <qaudiosystem.h>
+#include <SLES/OpenSLES.h>
+#include <qbytearray.h>
+#include <qmap.h>
+#include <QTime>
 
 QT_BEGIN_NAMESPACE
 
@@ -54,34 +58,98 @@ public:
     QOpenSLESAudioOutput(const QByteArray &device);
     ~QOpenSLESAudioOutput();
 
-    void start(QIODevice *device);
-    QIODevice *start();
-    void stop();
-    void reset();
-    void suspend();
-    void resume();
-    int bytesFree() const;
-    int periodSize() const;
-    void setBufferSize(int value);
-    int bufferSize() const;
-    void setNotifyInterval(int milliSeconds);
-    int notifyInterval() const;
-    qint64 processedUSecs() const;
-    qint64 elapsedUSecs() const;
-    QAudio::Error error() const;
-    QAudio::State state() const;
-    void setFormat(const QAudioFormat &format);
-    QAudioFormat format() const;
+    void start(QIODevice *device) Q_DECL_OVERRIDE;
+    QIODevice *start() Q_DECL_OVERRIDE;
+    void stop() Q_DECL_OVERRIDE;
+    void reset() Q_DECL_OVERRIDE;
+    void suspend() Q_DECL_OVERRIDE;
+    void resume() Q_DECL_OVERRIDE;
+    int bytesFree() const Q_DECL_OVERRIDE;
+    int periodSize() const Q_DECL_OVERRIDE;
+    void setBufferSize(int value) Q_DECL_OVERRIDE;
+    int bufferSize() const Q_DECL_OVERRIDE;
+    void setNotifyInterval(int milliSeconds) Q_DECL_OVERRIDE;
+    int notifyInterval() const Q_DECL_OVERRIDE;
+    qint64 processedUSecs() const Q_DECL_OVERRIDE;
+    qint64 elapsedUSecs() const Q_DECL_OVERRIDE;
+    QAudio::Error error() const Q_DECL_OVERRIDE;
+    QAudio::State state() const Q_DECL_OVERRIDE;
+    void setFormat(const QAudioFormat &format) Q_DECL_OVERRIDE;
+    QAudioFormat format() const Q_DECL_OVERRIDE;
 
-    void setVolume(qreal volume);
-    qreal volume() const;
+    void setVolume(qreal volume) Q_DECL_OVERRIDE;
+    qreal volume() const Q_DECL_OVERRIDE;
 
-    void setCategory(const QString &category);
-    QString category() const;
+    void setCategory(const QString &category) Q_DECL_OVERRIDE;
+    QString category() const Q_DECL_OVERRIDE;
 
 private:
-    QByteArray m_device;
+    friend class SLIODevicePrivate;
+
+    Q_INVOKABLE void onEOSEvent();
+    Q_INVOKABLE void onBufferEvent(quint32 count, quint32 playIndex);
+
+    static void playCallback(SLPlayItf, void *, SLuint32);
+    static void bufferQueueCallback(SLBufferQueueItf bufferQueue, void *ctx);
+
+    bool preparePlayer();
+    void destroyPlayer();
+    qint64 writeData(const char *data, qint64 len);
+
+    void setState(QAudio::State state);
+    void setError(QAudio::Error error);
+
+    SLmillibel adjustVolume(qreal vol);
+
+    QByteArray m_deviceName;
+    QAudio::State m_state;
+    QAudio::Error m_error;
+    SLObjectItf m_outputMixObject;
+    SLObjectItf m_playerObject;
+    SLPlayItf m_playItf;
+    SLVolumeItf m_volumeItf;
+    SLBufferQueueItf m_bufferQueueItf;
+    QIODevice *m_audioSource;
+    char *m_buffers;
+    qreal m_volume;
+    bool m_pullMode;
+    int m_nextBuffer;
+    int m_bufferSize;
+    int m_notifyInterval;
+    int m_periodSize;
+    qint64 m_elapsedTime;
+    qint64 m_processedBytes;
+    qint64 m_previousNotifyTime;
+    int m_availableBuffers;
+
+    qint32 m_streamType;
+    QTime m_clockStamp;
+    QAudioFormat m_format;
+    QString m_category;
+    static QMap<QString, qint32> m_categories;
 };
+
+class SLIODevicePrivate : public QIODevice
+{
+    Q_OBJECT
+
+public:
+    inline SLIODevicePrivate(QOpenSLESAudioOutput *audio) : m_audioDevice(audio) {}
+    inline ~SLIODevicePrivate() Q_DECL_OVERRIDE {}
+
+protected:
+    inline qint64 readData(char *, qint64) Q_DECL_OVERRIDE { return 0; }
+    inline qint64 writeData(const char *data, qint64 len) Q_DECL_OVERRIDE;
+
+private:
+    QOpenSLESAudioOutput *m_audioDevice;
+};
+
+qint64 SLIODevicePrivate::writeData(const char *data, qint64 len)
+{
+    Q_ASSERT(m_audioDevice);
+    return m_audioDevice->writeData(data, len);
+}
 
 QT_END_NAMESPACE
 

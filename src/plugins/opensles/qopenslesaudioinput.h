@@ -43,8 +43,23 @@
 #define QOPENSLESAUDIOINPUT_H
 
 #include <qaudiosystem.h>
+#include <QTime>
+#include <SLES/OpenSLES.h>
+
+#ifdef ANDROID
+#include <SLES/OpenSLES_Android.h>
+
+#define QT_ANDROID_PRESET_MIC "mic"
+#define QT_ANDROID_PRESET_CAMCORDER "camcorder"
+#define QT_ANDROID_PRESET_VOICE_RECOGNITION "voicerecognition"
+
+#endif
 
 QT_BEGIN_NAMESPACE
+
+class QOpenSLESEngine;
+class QIODevice;
+class QBuffer;
 
 class QOpenSLESAudioInput : public QAbstractAudioInput
 {
@@ -76,8 +91,42 @@ public:
     void setVolume(qreal volume);
     qreal volume() const;
 
+public Q_SLOTS:
+    void processBuffer();
+
 private:
+    bool startRecording();
+    void stopRecording();
+    void writeDataToDevice(const char *data, int size);
+    void flushBuffers();
+
     QByteArray m_device;
+    QOpenSLESEngine *m_engine;
+    SLObjectItf m_recorderObject;
+    SLRecordItf m_recorder;
+#ifdef ANDROID
+    SLuint32 m_recorderPreset;
+    SLAndroidSimpleBufferQueueItf m_bufferQueue;
+#else
+    SLBufferQueueItf m_bufferQueue;
+#endif
+
+    bool m_pullMode;
+    qint64 m_processedBytes;
+    QIODevice *m_audioSource;
+    QBuffer *m_bufferIODevice;
+    QByteArray m_pushBuffer;
+    QAudioFormat m_format;
+    QAudio::Error m_errorState;
+    QAudio::State m_deviceState;
+    QTime m_clockStamp;
+    qint64 m_lastNotifyTime;
+    qreal m_volume;
+    int m_bufferSize;
+    int m_periodSize;
+    int m_intervalTime;
+    QByteArray *m_buffers;
+    int m_currentBuffer;
 };
 
 QT_END_NAMESPACE

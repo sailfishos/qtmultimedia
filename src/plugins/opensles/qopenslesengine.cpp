@@ -41,6 +41,8 @@
 
 #include "qopenslesengine.h"
 
+#include "qopenslesaudioinput.h"
+
 #define CheckError(message) if (result != SL_RESULT_SUCCESS) { qWarning(message); return; }
 
 Q_GLOBAL_STATIC(QOpenSLESEngine, openslesEngine);
@@ -66,7 +68,6 @@ QOpenSLESEngine::QOpenSLESEngine()
 
     result = (*m_outputMix)->Realize(m_outputMix, SL_BOOLEAN_FALSE);
     CheckError("Failed to realize output mix");
-
 }
 
 QOpenSLESEngine::~QOpenSLESEngine()
@@ -102,8 +103,13 @@ SLDataFormat_PCM QOpenSLESEngine::audioFormatToSLFormatPCM(const QAudioFormat &f
 
 QList<QByteArray> QOpenSLESEngine::availableDevices(QAudio::Mode mode) const
 {
-    Q_UNUSED(mode);
-    // The Android OpenSL implementation doesn't provide the SLAudioIODeviceCapabilities interface
-    // and therefore we can only use the default input and output devices.
-    return QList<QByteArray>() << "default";
+    QList<QByteArray> devices;
+    if (mode == QAudio::AudioInput) {
+        devices << QT_ANDROID_PRESET_MIC
+                << QT_ANDROID_PRESET_CAMCORDER
+                << QT_ANDROID_PRESET_VOICE_RECOGNITION;
+    } else {
+        devices << "default";
+    }
+    return devices;
 }

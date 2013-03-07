@@ -53,6 +53,7 @@ QT_BEGIN_NAMESPACE
 
 #define NUM_BUFFERS 2
 #define DEFAULT_PERIOD_TIME_MS 50
+#define MINIMUM_PERIOD_TIME_MS 5
 
 #ifdef ANDROID
 static void bufferQueueCallback(SLAndroidSimpleBufferQueueItf, void *context)
@@ -274,8 +275,13 @@ bool QOpenSLESAudioInput::startRecording()
         return false;
     }
 
-    if (m_bufferSize <= 0)
+    if (m_bufferSize <= 0) {
         m_bufferSize = m_format.bytesForDuration(DEFAULT_PERIOD_TIME_MS * 1000);
+    } else {
+        int minimumBufSize = m_format.bytesForDuration(MINIMUM_PERIOD_TIME_MS * 1000);
+        if (m_bufferSize < minimumBufSize)
+            m_bufferSize = minimumBufSize;
+    }
 
     m_periodSize = m_bufferSize;
 

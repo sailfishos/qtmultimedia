@@ -63,11 +63,19 @@ public:
     static SLDataFormat_PCM audioFormatToSLFormatPCM(const QAudioFormat &format);
 
     QList<QByteArray> availableDevices(QAudio::Mode mode) const;
+    QList<int> supportedChannelCounts(QAudio::Mode mode) const;
+    QList<int> supportedSampleRates(QAudio::Mode mode) const;
 
 private:
+    void checkSupportedInputFormats();
+    bool inputFormatIsSupported(SLDataFormat_PCM format);
+
     SLObjectItf m_engineObject;
     SLEngineItf m_engine;
     SLObjectItf m_outputMix;
+
+    QList<int> m_supportedInputChannelCounts;
+    QList<int> m_supportedInputSampleRates;
 };
 
 QT_END_NAMESPACE

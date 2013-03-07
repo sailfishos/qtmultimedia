@@ -239,7 +239,6 @@ bool QOpenSLESAudioInput::startRecording()
         m_errorState = QAudio::OpenError;
         return false;
     }
-    qDebug() << presetValue;
 #endif
 
     // realize the audio recorder

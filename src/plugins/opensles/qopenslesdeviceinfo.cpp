@@ -41,11 +41,13 @@
 
 #include "qopenslesdeviceinfo.h"
 
+#include "qopenslesengine.h"
 
 QT_BEGIN_NAMESPACE
 
 QOpenSLESDeviceInfo::QOpenSLESDeviceInfo(const QByteArray &device, QAudio::Mode mode)
-    : m_device(device)
+    : m_engine(QOpenSLESEngine::instance())
+    , m_device(device)
     , m_mode(mode)
 {
 }
@@ -67,7 +69,7 @@ QAudioFormat QOpenSLESDeviceInfo::preferredFormat() const
     format.setCodec(QStringLiteral("audio/pcm"));
     format.setSampleSize(16);
     format.setSampleType(QAudioFormat::SignedInt);
-    format.setSampleRate(m_mode == QAudio::AudioInput ? 16000 : 44100);
+    format.setSampleRate(44100);
     format.setChannelCount(m_mode == QAudio::AudioInput ? 1 : 2);
     return format;
 }
@@ -84,28 +86,20 @@ QStringList QOpenSLESDeviceInfo::supportedCodecs()
 
 QList<int> QOpenSLESDeviceInfo::supportedSampleRates()
 {
-    if (m_mode == QAudio::AudioOutput) {
-        return QList<int>() << 8000 << 11025 << 12000 << 16000 << 22050
-                            << 24000 << 32000 << 44100 << 48000;
-    } else {
-        return QList<int>() << 16000;
-    }
+    return m_engine->supportedSampleRates(m_mode);
 }
 
 QList<int> QOpenSLESDeviceInfo::supportedChannelCounts()
 {
-    if (m_mode == QAudio::AudioOutput)
-        return QList<int>() << 1 << 2;
-    else
-        return QList<int>() << 1;
+    return m_engine->supportedChannelCounts(m_mode);
 }
 
 QList<int> QOpenSLESDeviceInfo::supportedSampleSizes()
 {
-    if (m_mode == QAudio::AudioOutput)
-        return QList<int>() << 8 << 16;
-    else
+    if (m_mode == QAudio::AudioInput)
         return QList<int>() << 16;
+    else
+        return QList<int>() << 8 << 16;
 }
 
 QList<QAudioFormat::Endian> QOpenSLESDeviceInfo::supportedByteOrders()
@@ -115,10 +109,7 @@ QList<QAudioFormat::Endian> QOpenSLESDeviceInfo::supportedByteOrders()
 
 QList<QAudioFormat::SampleType> QOpenSLESDeviceInfo::supportedSampleTypes()
 {
-    if (m_mode == QAudio::AudioOutput)
-        return QList<QAudioFormat::SampleType>() << QAudioFormat::SignedInt << QAudioFormat::UnSignedInt;
-    else
-        return QList<QAudioFormat::SampleType>() << QAudioFormat::SignedInt;
+    return QList<QAudioFormat::SampleType>() << QAudioFormat::SignedInt;
 }
 
 QT_END_NAMESPACE

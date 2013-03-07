@@ -46,6 +46,8 @@
 
 QT_BEGIN_NAMESPACE
 
+class QOpenSLESEngine;
+
 class QOpenSLESDeviceInfo : public QAbstractAudioDeviceInfo
 {
     Q_OBJECT
@@ -65,6 +67,7 @@ public:
     QList<QAudioFormat::SampleType> supportedSampleTypes();
 
 private:
+    QOpenSLESEngine *m_engine;
     QByteArray m_device;
     QAudio::Mode m_mode;
 };

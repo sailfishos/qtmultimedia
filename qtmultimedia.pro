@@ -1,5 +1,6 @@
 load(configure)
 qtCompileTest(openal)
+qtCompileTest(opensles)
 win32 {
     qtCompileTest(directshow)
     qtCompileTest(wmsdk)

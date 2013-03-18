@@ -9,7 +9,7 @@ TEMPLATE = subdirs
 SUBDIRS += m3u
 
 android {
-   SUBDIRS += android opensles
+   SUBDIRS += android
 }
 
 blackberry {
@@ -50,3 +50,6 @@ mac:!simulator {
     config_avfoundation: SUBDIRS += avfoundation
 }
 
+config_opensles {
+    SUBDIRS += opensles
+}

@@ -42,6 +42,7 @@
 #include "qopenslesaudiooutput.h"
 #include "qopenslesengine.h"
 #include <QDebug>
+#include <qmath.h>
 
 #ifdef ANDROID
 #include <SLES/OpenSLES_Android.h>
@@ -606,7 +607,7 @@ inline SLmillibel QOpenSLESAudioOutput::adjustVolume(qreal vol)
     if (qFuzzyCompare(vol, qreal(1.0)))
         return 0;
 
-    return SL_MILLIBEL_MIN + ((1 - (log(10 - (vol * 10)) / log(10))) * SL_MILLIBEL_MAX);
+    return SL_MILLIBEL_MIN + ((1 - (qLn(10 - (vol * 10)) / qLn(10))) * SL_MILLIBEL_MAX);
 }
 
 QT_END_NAMESPACE

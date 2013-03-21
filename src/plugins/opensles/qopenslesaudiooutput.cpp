@@ -403,9 +403,17 @@ bool QOpenSLESAudioOutput::preparePlayer()
     SLDataLocator_OutputMix outputMixLocator = { SL_DATALOCATOR_OUTPUTMIX, m_outputMixObject };
     SLDataSink audioSink = { &outputMixLocator, Q_NULLPTR };
 
+#ifndef ANDROID
     const int iids = 2;
     const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE, SL_IID_VOLUME };
     const SLboolean req[iids] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
+#else
+    const int iids = 3;
+    const SLInterfaceID ids[iids] = { SL_IID_BUFFERQUEUE,
+                                      SL_IID_VOLUME,
+                                      SL_IID_ANDROIDCONFIGURATION };
+    const SLboolean req[iids] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
+#endif // ANDROID
 
     // AudioPlayer
     if (SL_RESULT_SUCCESS != (*engine)->CreateAudioPlayer(engine,

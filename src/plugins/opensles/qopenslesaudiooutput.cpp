@@ -113,6 +113,8 @@ void QOpenSLESAudioOutput::start(QIODevice *device)
         return;
 
     m_audioSource = device;
+    setState(QAudio::ActiveState);
+    setError(QAudio::NoError);
 
     for (int i = 0; i != BUFFER_COUNT; ++i) {
         const int index = i * m_bufferSize;
@@ -121,13 +123,11 @@ void QOpenSLESAudioOutput::start(QIODevice *device)
                                                                           m_buffers + index,
                                                                           readSize)) {
             setError(QAudio::FatalError);
+            destroyPlayer();
             return;
         }
         m_processedBytes += readSize;
     }
-
-    setState(QAudio::ActiveState);
-    setError(QAudio::NoError);
 }
 
 QIODevice *QOpenSLESAudioOutput::start()

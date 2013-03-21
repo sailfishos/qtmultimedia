@@ -250,7 +250,7 @@ void QOpenSLESAudioOutput::setVolume(qreal vol)
 {
     m_volume = qBound(qreal(0.0), vol, qreal(1.0));
     const SLmillibel newVolume = adjustVolume(m_volume);
-    if (SL_RESULT_SUCCESS != (*m_volumeItf)->SetVolumeLevel(m_volumeItf, newVolume))
+    if (m_volumeItf && SL_RESULT_SUCCESS != (*m_volumeItf)->SetVolumeLevel(m_volumeItf, newVolume))
         qWarning() << "Unable to change volume";
 }
 
@@ -551,6 +551,9 @@ void QOpenSLESAudioOutput::destroyPlayer()
     m_previousNotifyTime = 0;
     m_nextBuffer = 0;
     m_availableBuffers = BUFFER_COUNT;
+    m_playItf = Q_NULLPTR;
+    m_volumeItf = Q_NULLPTR;
+    m_bufferQueueItf = Q_NULLPTR;
 }
 
 qint64 QOpenSLESAudioOutput::writeData(const char *data, qint64 len)

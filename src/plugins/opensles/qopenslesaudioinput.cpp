@@ -166,14 +166,16 @@ QIODevice *QOpenSLESAudioInput::start()
 
     if (startRecording()) {
         m_deviceState = QAudio::IdleState;
-        return m_bufferIODevice;
     } else {
         m_deviceState = QAudio::StoppedState;
         Q_EMIT errorChanged(m_errorState);
-        return 0;
+        m_bufferIODevice->close();
+        delete m_bufferIODevice;
+        m_bufferIODevice = 0;
     }
 
     Q_EMIT stateChanged(m_deviceState);
+    return m_bufferIODevice;
 }
 
 bool QOpenSLESAudioInput::startRecording()
@@ -313,10 +315,11 @@ void QOpenSLESAudioInput::stop()
     if (m_deviceState == QAudio::StoppedState)
         return;
 
+    m_deviceState = QAudio::StoppedState;
+
     stopRecording();
 
     m_errorState = QAudio::NoError;
-    m_deviceState = QAudio::StoppedState;
     Q_EMIT stateChanged(m_deviceState);
 }
 
@@ -427,9 +430,6 @@ void QOpenSLESAudioInput::writeDataToDevice(const char *data, int size)
 
 void QOpenSLESAudioInput::flushBuffers()
 {
-    if (m_deviceState == QAudio::StoppedState)
-        return;
-
     SLmillisecond recorderPos;
     (*m_recorder)->GetPosition(m_recorder, &recorderPos);
     qint64 devicePos = processedUSecs();

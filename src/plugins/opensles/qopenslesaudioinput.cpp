@@ -245,7 +245,7 @@ bool QOpenSLESAudioInput::startRecording()
     // realize the audio recorder
     result = (*m_recorderObject)->Realize(m_recorderObject, SL_BOOLEAN_FALSE);
     if (result != SL_RESULT_SUCCESS) {
-        m_errorState = QAudio::FatalError;
+        m_errorState = QAudio::OpenError;
         return false;
     }
 

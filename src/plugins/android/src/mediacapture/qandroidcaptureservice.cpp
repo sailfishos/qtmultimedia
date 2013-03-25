@@ -39,26 +39,59 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDVIDEOOUTPUT_H
-#define QANDROIDVIDEOOUTPUT_H
+#include "qandroidcaptureservice.h"
 
-#include <qglobal.h>
-#include <qsize.h>
-#include <jni.h>
+#include "qandroidcameracontrol.h"
+#include "qandroidvideodeviceselectorcontrol.h"
+#include "qandroidcamerasession.h"
+#include "qandroidvideorendercontrol.h"
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidVideoOutput
+QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
+    : QMediaService(parent)
+    , m_videoRendererControl(0)
 {
-public:
-    QAndroidVideoOutput() { }
-    virtual ~QAndroidVideoOutput() { }
+    m_cameraSession = new QAndroidCameraSession;
+    m_cameraControl = new QAndroidCameraControl(m_cameraSession);
+    m_videoInputControl = new QAndroidVideoDeviceSelectorControl(m_cameraSession);
 
-    virtual jobject surfaceHolder() = 0;
-    virtual void setVideoSize(const QSize &size) = 0;
-    virtual void stop() = 0;
-};
+}
+
+QAndroidCaptureService::~QAndroidCaptureService()
+{
+    delete m_cameraControl;
+    delete m_videoInputControl;
+    delete m_cameraSession;
+    delete m_videoRendererControl;
+}
+
+QMediaControl *QAndroidCaptureService::requestControl(const char *name)
+{
+    if (qstrcmp(name, QCameraControl_iid) == 0)
+        return m_cameraControl;
+
+    if (qstrcmp(name, QVideoDeviceSelectorControl_iid) == 0)
+        return m_videoInputControl;
+
+    if (qstrcmp(name, QVideoRendererControl_iid) == 0) {
+        if (!m_videoRendererControl) {
+            m_videoRendererControl = new QAndroidVideoRendererControl;
+            m_cameraSession->setVideoPreview(m_videoRendererControl);
+            return m_videoRendererControl;
+        }
+    }
+
+    return 0;
+}
+
+void QAndroidCaptureService::releaseControl(QMediaControl *control)
+{
+    if (control == m_videoRendererControl) {
+        m_cameraSession->setVideoPreview(0);
+        delete m_videoRendererControl;
+        m_videoRendererControl = 0;
+    }
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDVIDEOOUTPUT_H

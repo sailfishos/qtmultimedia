@@ -59,8 +59,6 @@ public:
     QMatrix4x4 getTransformMatrix();
     void updateTexImage();
 
-    QJNILocalRef<jobject> surfaceTexture();
-
     static bool initJNI(JNIEnv *env);
 
 Q_SIGNALS:

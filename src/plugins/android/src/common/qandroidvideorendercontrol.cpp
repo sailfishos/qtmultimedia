@@ -143,9 +143,7 @@ QAndroidVideoRendererControl::~QAndroidVideoRendererControl()
         m_glContext->makeCurrent(m_offscreenSurface);
 
     if (m_surfaceTexture) {
-        QJNILocalRef<jobject> surfaceTex = m_surfaceTexture->surfaceTexture();
-        QJNIObject obj(surfaceTex.object());
-        obj.callMethod<void>("release");
+        m_surfaceTexture->callMethod<void>("release");
         delete m_surfaceTexture;
         m_surfaceTexture = 0;
     }
@@ -186,10 +184,10 @@ void QAndroidVideoRendererControl::setSurface(QAbstractVideoSurface *surface)
         m_useImage = !m_surface->supportedPixelFormats(QAbstractVideoBuffer::GLTextureHandle).contains(QVideoFrame::Format_BGR32);
 }
 
-jobject QAndroidVideoRendererControl::surfaceHolder()
+void QAndroidVideoRendererControl::initSurfaceTexture()
 {
-    if (m_surfaceHolder)
-        return m_surfaceHolder->object();
+    if (m_surfaceTexture)
+        return;
 
     QOpenGLContext *currContext = QOpenGLContext::currentContext();
 
@@ -212,7 +210,7 @@ jobject QAndroidVideoRendererControl::surfaceHolder()
             m_glContext->setShareContext(shareContext);
 
         if (!m_glContext->create())
-            return 0;
+            return;
 
         // if sharing contexts is not supported, fallback to image rendering and send the bits
         // to the video surface
@@ -228,22 +226,37 @@ jobject QAndroidVideoRendererControl::surfaceHolder()
 
     if (m_surfaceTexture->isValid()) {
         connect(m_surfaceTexture, SIGNAL(frameAvailable()), this, SLOT(onFrameAvailable()));
-
-        QJNILocalRef<jobject> surfaceTex = m_surfaceTexture->surfaceTexture();
-
-        m_androidSurface = new QJNIObject("android/view/Surface",
-                                          "(Landroid/graphics/SurfaceTexture;)V",
-                                          surfaceTex.object());
-
-        m_surfaceHolder = new JSurfaceTextureHolder(m_androidSurface->object());
     } else {
         delete m_surfaceTexture;
         m_surfaceTexture = 0;
         glDeleteTextures(1, &m_externalTex);
     }
+}
+
+jobject QAndroidVideoRendererControl::surfaceHolder()
+{
+    initSurfaceTexture();
+
+    if (m_surfaceTexture && !m_surfaceHolder) {
+        m_androidSurface = new QJNIObject("android/view/Surface",
+                                          "(Landroid/graphics/SurfaceTexture;)V",
+                                          m_surfaceTexture->object());
+
+        m_surfaceHolder = new JSurfaceTextureHolder(m_androidSurface->object());
+    }
 
     if (m_surfaceHolder)
         return m_surfaceHolder->object();
+
+    return 0;
+}
+
+jobject QAndroidVideoRendererControl::surfaceTexture()
+{
+    initSurfaceTexture();
+
+    if (m_surfaceTexture)
+        return m_surfaceTexture->object();
 
     return 0;
 }

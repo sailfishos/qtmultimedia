@@ -39,34 +39,63 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMEDIASERVICEPLUGIN_H
-#define QANDROIDMEDIASERVICEPLUGIN_H
+#ifndef QANDROIDCAMERASESSION_H
+#define QANDROIDCAMERASESSION_H
 
-#include <QMediaServiceProviderPlugin>
+#include <qcamera.h>
 
 QT_BEGIN_NAMESPACE
 
-class QMediaService;
-class QAndroidMediaService;
+class JCamera;
+class QAndroidVideoOutput;
 
-class QAndroidMediaServicePlugin
-        : public QMediaServiceProviderPlugin
-        , public QMediaServiceFeaturesInterface
+class QAndroidCameraSession : public QObject
 {
     Q_OBJECT
-    Q_INTERFACES(QMediaServiceFeaturesInterface)
-    Q_PLUGIN_METADATA(IID "org.qt-project.qt.mediaserviceproviderfactory/5.0"
-                      FILE "mediaplayer.json")
-
 public:
-    QAndroidMediaServicePlugin();
-    ~QAndroidMediaServicePlugin();
+    explicit QAndroidCameraSession(QObject *parent = 0);
+    ~QAndroidCameraSession();
 
-    QMediaService* create(QString const& key) Q_DECL_OVERRIDE;
-    void release(QMediaService *service) Q_DECL_OVERRIDE;
-    QMediaServiceProviderHint::Features supportedFeatures(const QByteArray &service) const Q_DECL_OVERRIDE;
+    void setSelectedCamera(int cameraId) { m_selectedCamera = cameraId; }
+
+    QCamera::State state() const { return m_state; }
+    void setState(QCamera::State state);
+
+    QCamera::Status status() const { return m_status; }
+
+    QCamera::CaptureModes captureMode() const { return m_captureMode; }
+    void setCaptureMode(QCamera::CaptureModes mode);
+    bool isCaptureModeSupported(QCamera::CaptureModes mode) const;
+
+    void setVideoPreview(QAndroidVideoOutput *videoOutput);
+
+Q_SIGNALS:
+    void statusChanged(QCamera::Status status);
+    void stateChanged(QCamera::State);
+    void error(int error, const QString &errorString);
+    void captureModeChanged(QCamera::CaptureModes);
+
+private Q_SLOTS:
+    void onCameraPaused();
+    void onCameraResumed();
+
+private:
+    bool open();
+    void close(bool deleteCamera = true);
+
+    void startPreview();
+    void stopPreview();
+
+    int m_selectedCamera;
+    JCamera *m_camera;
+    QAndroidVideoOutput *m_videoOutput;
+
+    QCamera::CaptureModes m_captureMode;
+    QCamera::State m_state;
+    QCamera::Status m_status;
+    bool m_previewStarted;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMEDIASERVICEPLUGIN_H
+#endif // QANDROIDCAMERASESSION_H

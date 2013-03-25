@@ -39,57 +39,46 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDVIDEORENDERCONTROL_H
-#define QANDROIDVIDEORENDERCONTROL_H
+#ifndef QANDROIDVIDEODEVICESELECTORCONTROL_H
+#define QANDROIDVIDEODEVICESELECTORCONTROL_H
 
-#include <qvideorenderercontrol.h>
-#include "qandroidvideooutput.h"
-#include "jsurfacetexture.h"
+#include <qvideodeviceselectorcontrol.h>
+#include <QtCore/qstringlist.h>
 
 QT_BEGIN_NAMESPACE
 
-class QOpenGLContext;
-class QOffscreenSurface;
-class QOpenGLFramebufferObject;
-class QOpenGLShaderProgram;
-class JSurfaceTextureHolder;
+class QAndroidCameraSession;
 
-class QAndroidVideoRendererControl : public QVideoRendererControl, public QAndroidVideoOutput
+class QAndroidVideoDeviceSelectorControl : public QVideoDeviceSelectorControl
 {
     Q_OBJECT
 public:
-    explicit QAndroidVideoRendererControl(QObject *parent = 0);
-    ~QAndroidVideoRendererControl() Q_DECL_OVERRIDE;
+    explicit QAndroidVideoDeviceSelectorControl(QAndroidCameraSession *session);
+    ~QAndroidVideoDeviceSelectorControl();
 
-    QAbstractVideoSurface *surface() const Q_DECL_OVERRIDE;
-    void setSurface(QAbstractVideoSurface *surface) Q_DECL_OVERRIDE;
+    int deviceCount() const;
 
-    jobject surfaceHolder() Q_DECL_OVERRIDE;
-    void setVideoSize(const QSize &size) Q_DECL_OVERRIDE;
-    void stop() Q_DECL_OVERRIDE;
+    QString deviceName(int index) const;
+    QString deviceDescription(int index) const;
 
-private Q_SLOTS:
-    void onFrameAvailable();
+    int defaultDevice() const;
+    int selectedDevice() const;
+
+    void setSelectedDevice(int index);
+
+    static QList<QByteArray> availableDevices();
+    static QString availableDeviceDescription(const QByteArray &device);
 
 private:
-    void setupSurface();
-    void renderFrameToFbo();
-    void createGLResources();
+    static void update();
 
-    QAbstractVideoSurface *m_surface;
-    QOffscreenSurface *m_offscreenSurface;
-    QOpenGLContext *m_glContext;
-    QOpenGLFramebufferObject *m_fbo;
-    QOpenGLShaderProgram *m_program;
-    bool m_useImage;
-    QSize m_nativeSize;
+    int m_selectedDevice;
+    static QList<QByteArray> m_names;
+    static QStringList m_descriptions;
 
-    QJNIObject *m_androidSurface;
-    JSurfaceTexture *m_surfaceTexture;
-    JSurfaceTextureHolder *m_surfaceHolder;
-    uint m_externalTex;
+    QAndroidCameraSession *m_cameraSession;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDVIDEORENDERCONTROL_H
+#endif // QANDROIDVIDEODEVICESELECTORCONTROL_H

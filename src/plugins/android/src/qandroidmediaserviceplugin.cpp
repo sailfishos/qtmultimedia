@@ -42,9 +42,12 @@
 #include "qandroidmediaserviceplugin.h"
 
 #include "qandroidmediaservice.h"
+#include "qandroidcaptureservice.h"
+#include "qandroidvideodeviceselectorcontrol.h"
 #include "jmediaplayer.h"
 #include "jsurfacetexture.h"
 #include "jsurfacetextureholder.h"
+#include "jcamera.h"
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -59,8 +62,11 @@ QAndroidMediaServicePlugin::~QAndroidMediaServicePlugin()
 
 QMediaService *QAndroidMediaServicePlugin::create(const QString &key)
 {
-    if (key == QStringLiteral(Q_MEDIASERVICE_MEDIAPLAYER))
+    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER))
         return new QAndroidMediaService;
+
+    if (key == QLatin1String(Q_MEDIASERVICE_CAMERA))
+        return new QAndroidCaptureService;
 
     qWarning() << "Android service plugin: unsupported key:" << key;
     return 0;
@@ -76,7 +82,26 @@ QMediaServiceProviderHint::Features QAndroidMediaServicePlugin::supportedFeature
     if (service == Q_MEDIASERVICE_MEDIAPLAYER)
         return  QMediaServiceProviderHint::VideoSurface;
 
+    if (service == Q_MEDIASERVICE_CAMERA)
+        return QMediaServiceProviderHint::VideoSurface | QMediaServiceProviderHint::RecordingSupport;
+
     return QMediaServiceProviderHint::Features();
+}
+
+QList<QByteArray> QAndroidMediaServicePlugin::devices(const QByteArray &service) const
+{
+    if (service == Q_MEDIASERVICE_CAMERA)
+        return QAndroidVideoDeviceSelectorControl::availableDevices();
+
+    return QList<QByteArray>();
+}
+
+QString QAndroidMediaServicePlugin::deviceDescription(const QByteArray &service, const QByteArray &device)
+{
+    if (service == Q_MEDIASERVICE_CAMERA)
+        return QAndroidVideoDeviceSelectorControl::availableDeviceDescription(device);
+
+    return QString();
 }
 
 
@@ -97,7 +122,8 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void * /*reserved*/)
 
     if (!JMediaPlayer::initJNI(jniEnv) ||
         !JSurfaceTexture::initJNI(jniEnv) ||
-        !JSurfaceTextureHolder::initJNI(jniEnv)) {
+        !JSurfaceTextureHolder::initJNI(jniEnv) ||
+        !JCamera::initJNI(jniEnv)) {
         return JNI_ERR;
     }
 

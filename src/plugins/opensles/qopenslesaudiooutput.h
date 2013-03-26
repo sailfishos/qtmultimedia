@@ -87,9 +87,9 @@ private:
     friend class SLIODevicePrivate;
 
     Q_INVOKABLE void onEOSEvent();
-    Q_INVOKABLE void onBufferEvent(quint32 count, quint32 playIndex);
+    void bufferAvailable(quint32 count, quint32 playIndex);
 
-    static void playCallback(SLPlayItf, void *, SLuint32);
+    static void playCallback(SLPlayItf playItf, void *ctx, SLuint32 event);
     static void bufferQueueCallback(SLBufferQueueItf bufferQueue, void *ctx);
 
     bool preparePlayer();
@@ -119,8 +119,7 @@ private:
     int m_periodSize;
     qint64 m_elapsedTime;
     qint64 m_processedBytes;
-    qint64 m_previousNotifyTime;
-    int m_availableBuffers;
+    QAtomicInt m_availableBuffers;
 
     qint32 m_streamType;
     QTime m_clockStamp;

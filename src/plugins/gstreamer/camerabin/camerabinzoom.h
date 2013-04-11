@@ -39,24 +39,38 @@
 **
 ****************************************************************************/
 
-#ifndef AVFVIDEOOUTPUT_H
-#define AVFVIDEOOUTPUT_H
+#ifndef CAMERABINZOOMCONTROL_H
+#define CAMERABINZOOMCONTROL_H
 
-#include <QtCore/qobject.h>
+#include <qcamerazoomcontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class AVFVideoOutput
-{
-public:
-    virtual ~AVFVideoOutput() {}
-    virtual void setLayer(void *playerLayer) = 0;
-};
+class CameraBinSession;
 
-#define AVFVideoOutput_iid \
-    "org.qt-project.qt.AVFVideoOutput/5.0"
-Q_DECLARE_INTERFACE(AVFVideoOutput, AVFVideoOutput_iid)
+class CameraBinZoom  : public QCameraZoomControl
+{
+    Q_OBJECT
+public:
+    CameraBinZoom(CameraBinSession *session);
+    virtual ~CameraBinZoom();
+
+    qreal maximumOpticalZoom() const;
+    qreal maximumDigitalZoom() const;
+
+    qreal requestedOpticalZoom() const;
+    qreal requestedDigitalZoom() const;
+    qreal currentOpticalZoom() const;
+    qreal currentDigitalZoom() const;
+
+    void zoomTo(qreal optical, qreal digital);
+
+private:
+    CameraBinSession *m_session;
+    qreal m_requestedOpticalZoom;
+    qreal m_requestedDigitalZoom;
+};
 
 QT_END_NAMESPACE
 
-#endif // AVFVIDEOOUTPUT_H
+#endif // CAMERABINZOOMCONTROL_H

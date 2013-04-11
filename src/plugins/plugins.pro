@@ -45,9 +45,12 @@ unix:!mac {
 }
 
 mac:!simulator {
-    SUBDIRS += audiocapture qt7
+    SUBDIRS += audiocapture
 
-    config_avfoundation: SUBDIRS += avfoundation
+    !ios {
+        SUBDIRS += qt7
+        config_avfoundation: SUBDIRS += avfoundation
+    }
 }
 
 config_opensles {

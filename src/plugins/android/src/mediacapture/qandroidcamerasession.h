@@ -57,6 +57,7 @@ public:
     ~QAndroidCameraSession();
 
     void setSelectedCamera(int cameraId) { m_selectedCamera = cameraId; }
+    JCamera *camera() const { return m_camera; }
 
     QCamera::State state() const { return m_state; }
     void setState(QCamera::State state);
@@ -74,6 +75,7 @@ Q_SIGNALS:
     void stateChanged(QCamera::State);
     void error(int error, const QString &errorString);
     void captureModeChanged(QCamera::CaptureModes);
+    void opened();
 
 private Q_SLOTS:
     void onCameraPaused();

@@ -39,64 +39,42 @@
 **
 ****************************************************************************/
 
-#include "qandroidcaptureservice.h"
+#ifndef QANDROIDCAMERAZOOMCONTROL_H
+#define QANDROIDCAMERAZOOMCONTROL_H
 
-#include "qandroidcameracontrol.h"
-#include "qandroidvideodeviceselectorcontrol.h"
-#include "qandroidcamerasession.h"
-#include "qandroidvideorendercontrol.h"
-#include "qandroidcamerazoomcontrol.h"
+#include <qcamerazoomcontrol.h>
+#include <qcamera.h>
 
 QT_BEGIN_NAMESPACE
 
-QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
-    : QMediaService(parent)
-    , m_videoRendererControl(0)
+class QAndroidCameraSession;
+
+class QAndroidCameraZoomControl : public QCameraZoomControl
 {
-    m_cameraSession = new QAndroidCameraSession;
-    m_cameraControl = new QAndroidCameraControl(m_cameraSession);
-    m_videoInputControl = new QAndroidVideoDeviceSelectorControl(m_cameraSession);
-    m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
-}
+    Q_OBJECT
+public:
+    explicit QAndroidCameraZoomControl(QAndroidCameraSession *session);
 
-QAndroidCaptureService::~QAndroidCaptureService()
-{
-    delete m_cameraControl;
-    delete m_videoInputControl;
-    delete m_cameraSession;
-    delete m_videoRendererControl;
-    delete m_cameraZoomControl;
-}
+    qreal maximumOpticalZoom() const Q_DECL_OVERRIDE;
+    qreal maximumDigitalZoom() const Q_DECL_OVERRIDE;
+    qreal requestedOpticalZoom() const Q_DECL_OVERRIDE;
+    qreal requestedDigitalZoom() const Q_DECL_OVERRIDE;
+    qreal currentOpticalZoom() const Q_DECL_OVERRIDE;
+    qreal currentDigitalZoom() const Q_DECL_OVERRIDE;
+    void zoomTo(qreal optical, qreal digital) Q_DECL_OVERRIDE;
 
-QMediaControl *QAndroidCaptureService::requestControl(const char *name)
-{
-    if (qstrcmp(name, QCameraControl_iid) == 0)
-        return m_cameraControl;
+private Q_SLOTS:
+    void onCameraOpened();
 
-    if (qstrcmp(name, QVideoDeviceSelectorControl_iid) == 0)
-        return m_videoInputControl;
+private:
+    QAndroidCameraSession *m_cameraSession;
 
-    if (qstrcmp(name, QCameraZoomControl_iid) == 0)
-        return m_cameraZoomControl;
-
-    if (qstrcmp(name, QVideoRendererControl_iid) == 0) {
-        if (!m_videoRendererControl) {
-            m_videoRendererControl = new QAndroidVideoRendererControl;
-            m_cameraSession->setVideoPreview(m_videoRendererControl);
-            return m_videoRendererControl;
-        }
-    }
-
-    return 0;
-}
-
-void QAndroidCaptureService::releaseControl(QMediaControl *control)
-{
-    if (control == m_videoRendererControl) {
-        m_cameraSession->setVideoPreview(0);
-        delete m_videoRendererControl;
-        m_videoRendererControl = 0;
-    }
-}
+    qreal m_maximumZoom;
+    QList<int> m_zoomRatios;
+    qreal m_requestedZoom;
+    qreal m_currentZoom;
+};
 
 QT_END_NAMESPACE
+
+#endif // QANDROIDCAMERAZOOMCONTROL_H

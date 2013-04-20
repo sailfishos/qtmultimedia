@@ -120,6 +120,7 @@ bool QAndroidCameraSession::open()
         m_status = QCamera::LoadedStatus;
         connect(m_camera, SIGNAL(paused()), this, SLOT(onCameraPaused()));
         connect(m_camera, SIGNAL(resumed()), this, SLOT(onCameraResumed()));
+        emit opened();
     } else {
         m_status = QCamera::UnavailableStatus;
     }

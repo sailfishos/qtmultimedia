@@ -51,6 +51,7 @@ class QAndroidCameraControl;
 class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
 class QAndroidVideoRendererControl;
+class QAndroidCameraZoomControl;
 
 class QAndroidCaptureService : public QMediaService
 {
@@ -68,6 +69,7 @@ private:
     QAndroidVideoDeviceSelectorControl *m_videoInputControl;
     QAndroidCameraSession *m_cameraSession;
     QAndroidVideoRendererControl *m_videoRendererControl;
+    QAndroidCameraZoomControl *m_cameraZoomControl;
 };
 
 QT_END_NAMESPACE

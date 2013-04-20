@@ -68,6 +68,12 @@ public:
     void setPreviewSize(int width, int height);
     void setPreviewTexture(jobject surfaceTexture);
 
+    bool isZoomSupported();
+    int getMaxZoom();
+    QList<int> getZoomRatios();
+    int getZoom();
+    void setZoom(int value);
+
     void startPreview();
     void stopPreview();
 
@@ -79,7 +85,7 @@ Q_SIGNALS:
 
 private:
     JCamera(int cameraId, jobject cam);
-    void setParameters();
+    void applyParameters();
 
     int m_cameraId;
     QJNIObject *m_parameters;

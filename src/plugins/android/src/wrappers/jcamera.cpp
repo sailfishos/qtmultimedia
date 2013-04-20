@@ -87,8 +87,6 @@ JCamera::JCamera(int cameraId, jobject cam)
 
 JCamera::~JCamera()
 {
-    if (m_jobject)
-        g_objectMap.remove(m_cameraId);
     delete m_parameters;
 }
 
@@ -131,12 +129,14 @@ void JCamera::release()
 
 void JCamera::destroy()
 {
+    if (m_jobject)
+        g_objectMap.remove(m_cameraId);
     callMethod<void>("destroy");
 }
 
 QSize JCamera::getPreferredPreviewSizeForVideo()
 {
-    if (!m_parameters->isValid())
+    if (!m_parameters || !m_parameters->isValid())
         return QSize();
 
     QJNILocalRef<jobject> sizeRef = m_parameters->callObjectMethod<jobject>("getPreferredPreviewSizeForVideo",
@@ -150,7 +150,7 @@ QList<QSize> JCamera::getSupportedPreviewSizes()
 {
     QList<QSize> list;
 
-    if (m_parameters->isValid()) {
+    if (m_parameters && m_parameters->isValid()) {
         QJNILocalRef<jobject> sizeListRef = m_parameters->callObjectMethod<jobject>("getSupportedPreviewSizes",
                                                                                     "()Ljava/util/List;");
         QJNIObject sizeList(sizeListRef.object());
@@ -171,10 +171,11 @@ QList<QSize> JCamera::getSupportedPreviewSizes()
 
 void JCamera::setPreviewSize(int width, int height)
 {
-    if (!m_parameters->isValid())
+    if (!m_parameters || !m_parameters->isValid())
         return;
 
     m_parameters->callMethod<void>("setPreviewSize", "(II)V", width, height);
+    applyParameters();
 }
 
 void JCamera::setPreviewTexture(jobject surfaceTexture)
@@ -182,9 +183,63 @@ void JCamera::setPreviewTexture(jobject surfaceTexture)
     callMethod<void>("setPreviewTexture", "(Landroid/graphics/SurfaceTexture;)V", surfaceTexture);
 }
 
+bool JCamera::isZoomSupported()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return false;
+
+    return m_parameters->callMethod<jboolean>("isZoomSupported");
+}
+
+int JCamera::getMaxZoom()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getMaxZoom");
+}
+
+QList<int> JCamera::getZoomRatios()
+{
+    QList<int> ratios;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> ratioListRef = m_parameters->callObjectMethod<jobject>("getZoomRatios",
+                                                                                     "()Ljava/util/List;");
+        QJNIObject ratioList(ratioListRef.object());
+        int count = ratioList.callMethod<jint>("size");
+        for (int i = 0; i < count; ++i) {
+            QJNILocalRef<jobject> zoomRatioRef = ratioList.callObjectMethod<jobject>("get",
+                                                                                     "(I)Ljava/lang/Object;",
+                                                                                     i);
+
+            QJNIObject zoomRatio(zoomRatioRef.object());
+            ratios.append(zoomRatio.callMethod<jint>("intValue"));
+        }
+    }
+
+    return ratios;
+}
+
+int JCamera::getZoom()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getZoom");
+}
+
+void JCamera::setZoom(int value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setZoom", "(I)V", value);
+    applyParameters();
+}
+
 void JCamera::startPreview()
 {
-    setParameters();
     callMethod<void>("startPreview");
 }
 
@@ -193,11 +248,8 @@ void JCamera::stopPreview()
     callMethod<void>("stopPreview");
 }
 
-void JCamera::setParameters()
+void JCamera::applyParameters()
 {
-    if (!m_parameters->isValid())
-        return;
-
     callMethod<void>("setParameters",
                      "(Landroid/hardware/Camera$Parameters;)V",
                      m_parameters->object());

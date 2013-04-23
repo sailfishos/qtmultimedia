@@ -42,6 +42,7 @@
 #include "jcamera.h"
 
 #include <QtPlatformSupport/private/qjnihelpers_p.h>
+#include <qstringlist.h>
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -235,6 +236,97 @@ void JCamera::setZoom(int value)
         return;
 
     m_parameters->callMethod<void>("setZoom", "(I)V", value);
+    applyParameters();
+}
+
+int JCamera::getExposureCompensation()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getExposureCompensation");
+}
+
+void JCamera::setExposureCompensation(int value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setExposureCompensation", "(I)V", value);
+    applyParameters();
+}
+
+float JCamera::getExposureCompensationStep()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jfloat>("getExposureCompensationStep");
+}
+
+int JCamera::getMinExposureCompensation()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getMinExposureCompensation");
+}
+
+int JCamera::getMaxExposureCompensation()
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getMaxExposureCompensation");
+}
+
+QStringList JCamera::getSupportedSceneModes()
+{
+    QStringList sceneModes;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> sceneModesRef = m_parameters->callObjectMethod<jobject>("getSupportedSceneModes",
+                                                                                      "()Ljava/util/List;");
+
+        if (!sceneModesRef.isNull()) {
+            QJNIObject sceneModeList(sceneModesRef.object());
+            int count = sceneModeList.callMethod<jint>("size");
+            for (int i = 0; i < count; ++i) {
+                QJNILocalRef<jobject> sceneModeRef = sceneModeList.callObjectMethod<jobject>("get",
+                                                                                             "(I)Ljava/lang/Object;",
+                                                                                             i);
+
+                QJNIObject sceneMode(sceneModeRef.object());
+                sceneModes.append(qt_convertJString(sceneMode.callObjectMethod<jstring>("toString").object()));
+            }
+        }
+    }
+
+    return sceneModes;
+}
+
+QString JCamera::getSceneMode()
+{
+    QString value;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jstring> sceneMode = m_parameters->callObjectMethod<jstring>("getSceneMode",
+                                                                                  "()Ljava/lang/String;");
+        if (!sceneMode.isNull())
+            value = qt_convertJString(sceneMode.object());
+    }
+
+    return value;
+}
+
+void JCamera::setSceneMode(const QString &value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setSceneMode",
+                                   "(Ljava/lang/String;)V",
+                                   qt_toJString(value).object());
     applyParameters();
 }
 

@@ -46,6 +46,7 @@
 #include "qandroidcamerasession.h"
 #include "qandroidvideorendercontrol.h"
 #include "qandroidcamerazoomcontrol.h"
+#include "qandroidcameraexposurecontrol.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -57,6 +58,7 @@ QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
     m_cameraControl = new QAndroidCameraControl(m_cameraSession);
     m_videoInputControl = new QAndroidVideoDeviceSelectorControl(m_cameraSession);
     m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
+    m_cameraExposureControl = new QAndroidCameraExposureControl(m_cameraSession);
 }
 
 QAndroidCaptureService::~QAndroidCaptureService()
@@ -66,6 +68,7 @@ QAndroidCaptureService::~QAndroidCaptureService()
     delete m_cameraSession;
     delete m_videoRendererControl;
     delete m_cameraZoomControl;
+    delete m_cameraExposureControl;
 }
 
 QMediaControl *QAndroidCaptureService::requestControl(const char *name)
@@ -78,6 +81,9 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 
     if (qstrcmp(name, QCameraZoomControl_iid) == 0)
         return m_cameraZoomControl;
+
+    if (qstrcmp(name, QCameraExposureControl_iid) == 0)
+        return m_cameraExposureControl;
 
     if (qstrcmp(name, QVideoRendererControl_iid) == 0) {
         if (!m_videoRendererControl) {

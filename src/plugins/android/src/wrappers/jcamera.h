@@ -74,6 +74,16 @@ public:
     int getZoom();
     void setZoom(int value);
 
+    int getExposureCompensation();
+    void setExposureCompensation(int value);
+    float getExposureCompensationStep();
+    int getMinExposureCompensation();
+    int getMaxExposureCompensation();
+
+    QStringList getSupportedSceneModes();
+    QString getSceneMode();
+    void setSceneMode(const QString &value);
+
     void startPreview();
     void stopPreview();
 

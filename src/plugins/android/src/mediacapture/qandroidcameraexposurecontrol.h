@@ -39,41 +39,47 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDCAMERAEXPOSURECONTROL_H
+#define QANDROIDCAMERAEXPOSURECONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qcameraexposurecontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
 
-class QAndroidCaptureService : public QMediaService
+class QAndroidCameraExposureControl : public QCameraExposureControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    explicit QAndroidCameraExposureControl(QAndroidCameraSession *session);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    bool isParameterSupported(ExposureParameter parameter) const Q_DECL_OVERRIDE;
+    QVariantList supportedParameterRange(ExposureParameter parameter, bool *continuous) const Q_DECL_OVERRIDE;
+
+    QVariant requestedValue(ExposureParameter parameter) const Q_DECL_OVERRIDE;
+    QVariant actualValue(ExposureParameter parameter) const Q_DECL_OVERRIDE;
+    bool setValue(ExposureParameter parameter, const QVariant& value) Q_DECL_OVERRIDE;
+
+private Q_SLOTS:
+    void onCameraOpened();
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
+    QAndroidCameraSession *m_session;
+
+    QVariantList m_supportedExposureCompensations;
+    QVariantList m_supportedExposureModes;
+
+    int m_minExposureCompensationIndex;
+    int m_maxExposureCompensationIndex;
+    qreal m_exposureCompensationStep;
+
+    qreal m_requestedExposureCompensation;
+    qreal m_actualExposureCompensation;
+    QCameraExposure::ExposureMode m_requestedExposureMode;
+    QCameraExposure::ExposureMode m_actualExposureMode;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDCAMERAEXPOSURECONTROL_H

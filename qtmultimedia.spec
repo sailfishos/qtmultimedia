@@ -1,7 +1,7 @@
-%define _qtmodule_snapshot_version 5.0.1
+%define _qtmodule_snapshot_version 5.0.2
 Name:       qt5-qtmultimedia
 Summary:    Qt Multimedia module
-Version:    5.0.1
+Version:    5.0.2
 Release:    1%{?dist}
 Group:      Qt/Qt
 License:    LGPLv2.1 with exception or GPLv3

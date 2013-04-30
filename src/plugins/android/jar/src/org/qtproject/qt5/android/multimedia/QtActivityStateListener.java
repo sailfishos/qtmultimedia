@@ -41,101 +41,60 @@
 
 package org.qtproject.qt5.android.multimedia;
 
-import android.hardware.Camera;
-import android.graphics.SurfaceTexture;
-import android.util.Log;
+import android.app.Activity;
+import android.app.Fragment;
+import android.app.FragmentTransaction;
+import android.app.FragmentManager;
 
-public class QtCamera
+public class QtActivityStateListener extends Fragment
 {
-    private int m_cameraId = -1;
-    private Camera m_camera = null;
+    static private FragmentManager m_fragmentManager = null;
+    private long m_Id = -1;
 
-    private static final String TAG = "Qt Camera";
-
-    private QtCamera(int id, Camera cam)
+    static public void setActivity(Activity activity, Object activityDelegate)
     {
-        m_cameraId = id;
-        m_camera = cam;
+        m_fragmentManager = activity.getFragmentManager();
     }
 
-    public static QtCamera open(int cameraId)
+    public QtActivityStateListener()
     {
-        try {
-            Camera cam = Camera.open(cameraId);
-            return new QtCamera(cameraId, cam);
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
-        return null;
+        super();
     }
 
-    public Camera.Parameters getParameters()
+    public QtActivityStateListener(long id)
     {
-        return m_camera.getParameters();
+        super();
+        m_Id = id;
     }
 
-    public void lock()
+    public void create()
     {
-        try {
-            m_camera.lock();
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
+        FragmentTransaction fragmentTransaction = m_fragmentManager.beginTransaction();
+        fragmentTransaction.add(this, "QtActivityStateListener");
+        fragmentTransaction.commit();
     }
 
-    public void unlock()
+    public void destroy()
     {
-        try {
-            m_camera.unlock();
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
+        FragmentTransaction fragmentTransaction = m_fragmentManager.beginTransaction();
+        fragmentTransaction.remove(this);
+        fragmentTransaction.commit();
     }
 
-    public void release()
+    @Override
+    public void onPause()
     {
-        m_camera.release();
+        notifyPause(m_Id);
+        super.onPause();
     }
 
-    public void reconnect()
+    @Override
+    public void onResume()
     {
-        try {
-            m_camera.reconnect();
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
+        notifyResume(m_Id);
+        super.onResume();
     }
 
-    public void setDisplayOrientation(int degrees)
-    {
-        m_camera.setDisplayOrientation(degrees);
-    }
-
-    public void setParameters(Camera.Parameters params)
-    {
-        try {
-            m_camera.setParameters(params);
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
-    }
-
-    public void setPreviewTexture(SurfaceTexture surfaceTexture)
-    {
-        try {
-            m_camera.setPreviewTexture(surfaceTexture);
-        } catch(Exception e) {
-            Log.d(TAG, e.getMessage());
-        }
-    }
-
-    public void startPreview()
-    {
-        m_camera.startPreview();
-    }
-
-    public void stopPreview()
-    {
-        m_camera.stopPreview();
-    }
+    private static native void notifyPause(long id);
+    private static native void notifyResume(long id);
 }

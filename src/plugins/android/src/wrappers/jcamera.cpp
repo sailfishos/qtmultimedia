@@ -55,22 +55,6 @@ static bool sizeLessThan(const QSize &s1, const QSize &s2)
     return s1.width() * s1.height() < s2.width() * s2.height();
 }
 
-
-// native methods for QtCamera.java
-static void notifyPause(JNIEnv*, jobject, int id)
-{
-    JCamera *obj = g_objectMap.value(id, 0);
-    if (obj)
-        Q_EMIT obj->paused();
-}
-
-static void notifyResume(JNIEnv*, jobject, int id)
-{
-    JCamera *obj = g_objectMap.value(id, 0);
-    if (obj)
-        Q_EMIT obj->resumed();
-}
-
 JCamera::JCamera(int cameraId, jobject cam)
     : QObject()
     , QJNIObject(cam)
@@ -88,6 +72,8 @@ JCamera::JCamera(int cameraId, jobject cam)
 
 JCamera::~JCamera()
 {
+    if (m_jobject)
+        g_objectMap.remove(m_cameraId);
     delete m_parameters;
 }
 
@@ -126,13 +112,6 @@ void JCamera::release()
     delete m_parameters;
     m_parameters = 0;
     callMethod<void>("release");
-}
-
-void JCamera::destroy()
-{
-    if (m_jobject)
-        g_objectMap.remove(m_cameraId);
-    callMethod<void>("destroy");
 }
 
 QSize JCamera::getPreferredPreviewSizeForVideo()
@@ -347,25 +326,14 @@ void JCamera::applyParameters()
                      m_parameters->object());
 }
 
-static JNINativeMethod methods[] = {
-    {"notifyPause", "(I)V", (void *)notifyPause},
-    {"notifyResume", "(I)V", (void *)notifyResume}
-};
-
 bool JCamera::initJNI(JNIEnv *env)
 {
     jclass clazz = env->FindClass("org/qtproject/qt5/android/multimedia/QtCamera");
     if (env->ExceptionCheck())
         env->ExceptionClear();
 
-    if (clazz) {
+    if (clazz)
         g_qtCameraClass = static_cast<jclass>(env->NewGlobalRef(clazz));
-        if (env->RegisterNatives(g_qtCameraClass,
-                                 methods,
-                                 sizeof(methods) / sizeof(methods[0])) < 0) {
-            return false;
-        }
-    }
 
     return true;
 }

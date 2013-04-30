@@ -39,69 +39,69 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAMERASESSION_H
-#define QANDROIDCAMERASESSION_H
+#include "jactivitystatelistener.h"
 
-#include <qcamera.h>
+#include <qmap.h>
 
 QT_BEGIN_NAMESPACE
 
-class JCamera;
-class JActivityStateListener;
-class QAndroidVideoOutput;
+static jclass g_qtActivityStateListenerClass = 0;
+static QMap<jlong, JActivityStateListener*> g_objectMap;
 
-class QAndroidCameraSession : public QObject
+// native methods for QtCameraFragment.java
+static void notifyPause(JNIEnv*, jobject, jlong id)
 {
-    Q_OBJECT
-public:
-    explicit QAndroidCameraSession(QObject *parent = 0);
-    ~QAndroidCameraSession();
+    JActivityStateListener *obj = g_objectMap.value(id, 0);
+    if (obj)
+        emit obj->paused();
+}
 
-    void setSelectedCamera(int cameraId) { m_selectedCamera = cameraId; }
-    JCamera *camera() const { return m_camera; }
+static void notifyResume(JNIEnv*, jobject, jlong id)
+{
+    JActivityStateListener *obj = g_objectMap.value(id, 0);
+    if (obj)
+        emit obj->resumed();
+}
 
-    QCamera::State state() const { return m_state; }
-    void setState(QCamera::State state);
+JActivityStateListener::JActivityStateListener()
+    : QObject()
+    , QJNIObject(g_qtActivityStateListenerClass, "(J)V", reinterpret_cast<jlong>(this))
+    , m_Id(reinterpret_cast<jlong>(this))
+{
+    if (m_jobject) {
+        g_objectMap.insert(m_Id, this);
+        callMethod<void>("create");
+    }
+}
 
-    QCamera::Status status() const { return m_status; }
+JActivityStateListener::~JActivityStateListener()
+{
+    if (m_jobject)
+        g_objectMap.remove(m_Id);
+    callMethod<void>("destroy");
+}
 
-    QCamera::CaptureModes captureMode() const { return m_captureMode; }
-    void setCaptureMode(QCamera::CaptureModes mode);
-    bool isCaptureModeSupported(QCamera::CaptureModes mode) const;
-
-    void setVideoPreview(QAndroidVideoOutput *videoOutput);
-
-Q_SIGNALS:
-    void statusChanged(QCamera::Status status);
-    void stateChanged(QCamera::State);
-    void error(int error, const QString &errorString);
-    void captureModeChanged(QCamera::CaptureModes);
-    void opened();
-
-private Q_SLOTS:
-    void onActivityPaused();
-    void onActivityResumed();
-
-private:
-    bool open();
-    void close();
-
-    void startPreview();
-    void stopPreview();
-
-    int m_selectedCamera;
-    JCamera *m_camera;
-    QAndroidVideoOutput *m_videoOutput;
-
-    JActivityStateListener *m_activityListener;
-
-    QCamera::CaptureModes m_captureMode;
-    QCamera::State m_state;
-    int m_savedState;
-    QCamera::Status m_status;
-    bool m_previewStarted;
+static JNINativeMethod methods[] = {
+    {"notifyPause", "(J)V", (void *)notifyPause},
+    {"notifyResume", "(J)V", (void *)notifyResume}
 };
 
-QT_END_NAMESPACE
+bool JActivityStateListener::initJNI(JNIEnv *env)
+{
+    jclass clazz = env->FindClass("org/qtproject/qt5/android/multimedia/QtActivityStateListener");
+    if (env->ExceptionCheck())
+        env->ExceptionClear();
 
-#endif // QANDROIDCAMERASESSION_H
+    if (clazz) {
+        g_qtActivityStateListenerClass = static_cast<jclass>(env->NewGlobalRef(clazz));
+        if (env->RegisterNatives(g_qtActivityStateListenerClass,
+                                 methods,
+                                 sizeof(methods) / sizeof(methods[0])) < 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+QT_END_NAMESPACE

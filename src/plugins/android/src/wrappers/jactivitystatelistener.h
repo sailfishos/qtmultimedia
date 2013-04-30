@@ -39,69 +39,31 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAMERASESSION_H
-#define QANDROIDCAMERASESSION_H
+#ifndef JACTIVITYSTATELISTENER_H
+#define JACTIVITYSTATELISTENER_H
 
-#include <qcamera.h>
+#include <qobject.h>
+#include <QtPlatformSupport/private/qjniobject_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class JCamera;
-class JActivityStateListener;
-class QAndroidVideoOutput;
-
-class QAndroidCameraSession : public QObject
+class JActivityStateListener : public QObject, public QJNIObject
 {
     Q_OBJECT
 public:
-    explicit QAndroidCameraSession(QObject *parent = 0);
-    ~QAndroidCameraSession();
+    JActivityStateListener();
+    ~JActivityStateListener();
 
-    void setSelectedCamera(int cameraId) { m_selectedCamera = cameraId; }
-    JCamera *camera() const { return m_camera; }
-
-    QCamera::State state() const { return m_state; }
-    void setState(QCamera::State state);
-
-    QCamera::Status status() const { return m_status; }
-
-    QCamera::CaptureModes captureMode() const { return m_captureMode; }
-    void setCaptureMode(QCamera::CaptureModes mode);
-    bool isCaptureModeSupported(QCamera::CaptureModes mode) const;
-
-    void setVideoPreview(QAndroidVideoOutput *videoOutput);
+    static bool initJNI(JNIEnv *env);
 
 Q_SIGNALS:
-    void statusChanged(QCamera::Status status);
-    void stateChanged(QCamera::State);
-    void error(int error, const QString &errorString);
-    void captureModeChanged(QCamera::CaptureModes);
-    void opened();
-
-private Q_SLOTS:
-    void onActivityPaused();
-    void onActivityResumed();
+    void paused();
+    void resumed();
 
 private:
-    bool open();
-    void close();
-
-    void startPreview();
-    void stopPreview();
-
-    int m_selectedCamera;
-    JCamera *m_camera;
-    QAndroidVideoOutput *m_videoOutput;
-
-    JActivityStateListener *m_activityListener;
-
-    QCamera::CaptureModes m_captureMode;
-    QCamera::State m_state;
-    int m_savedState;
-    QCamera::Status m_status;
-    bool m_previewStarted;
+    jlong m_Id;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAMERASESSION_H
+#endif // JACTIVITYSTATELISTENER_H

@@ -42,6 +42,7 @@
 #include "qandroidcamerasession.h"
 
 #include "jcamera.h"
+#include "jactivitystatelistener.h"
 #include "qandroidvideooutput.h"
 #include <qdebug.h>
 
@@ -54,14 +55,19 @@ QAndroidCameraSession::QAndroidCameraSession(QObject *parent)
     , m_videoOutput(0)
     , m_captureMode(QCamera::CaptureViewfinder)
     , m_state(QCamera::UnloadedState)
+    , m_savedState(-1)
     , m_status(QCamera::UnloadedStatus)
     , m_previewStarted(false)
 {
+    m_activityListener = new JActivityStateListener;
+    connect(m_activityListener, SIGNAL(paused()), this, SLOT(onActivityPaused()));
+    connect(m_activityListener, SIGNAL(resumed()), this, SLOT(onActivityResumed()));
 }
 
 QAndroidCameraSession::~QAndroidCameraSession()
 {
     close();
+    delete m_activityListener;
 }
 
 void QAndroidCameraSession::setCaptureMode(QCamera::CaptureModes mode)
@@ -118,8 +124,6 @@ bool QAndroidCameraSession::open()
 
     if (m_camera) {
         m_status = QCamera::LoadedStatus;
-        connect(m_camera, SIGNAL(paused()), this, SLOT(onCameraPaused()));
-        connect(m_camera, SIGNAL(resumed()), this, SLOT(onCameraResumed()));
         emit opened();
     } else {
         m_status = QCamera::UnavailableStatus;
@@ -130,7 +134,7 @@ bool QAndroidCameraSession::open()
     return m_camera != 0;
 }
 
-void QAndroidCameraSession::close(bool deleteCamera)
+void QAndroidCameraSession::close()
 {
     if (!m_camera)
         return;
@@ -141,11 +145,8 @@ void QAndroidCameraSession::close(bool deleteCamera)
     emit statusChanged(m_status);
 
     m_camera->release();
-    if (deleteCamera) {
-        m_camera->destroy();
-        delete m_camera;
-        m_camera = 0;
-    }
+    delete m_camera;
+    m_camera = 0;
 
     m_status = QCamera::UnloadedStatus;
     emit statusChanged(m_status);
@@ -198,19 +199,18 @@ void QAndroidCameraSession::stopPreview()
     emit statusChanged(m_status);
 }
 
-void QAndroidCameraSession::onCameraPaused()
+void QAndroidCameraSession::onActivityPaused()
 {
-    if (m_camera)
-        close(false);
+    m_savedState = m_state;
+    setState(QCamera::UnloadedState);
 }
 
-void QAndroidCameraSession::onCameraResumed()
+void QAndroidCameraSession::onActivityResumed()
 {
-    m_camera->destroy();
-    m_camera->deleteLater();
-    m_camera = 0;
-    if (open())
-        startPreview();
+    if (m_savedState != -1) {
+        setState(QCamera::State(m_savedState));
+        m_savedState = -1;
+    }
 }
 
 QT_END_NAMESPACE

@@ -60,7 +60,6 @@ public:
     void unlock();
     void reconnect();
     void release();
-    void destroy();
 
     QSize getPreferredPreviewSizeForVideo();
     QList<QSize> getSupportedPreviewSizes();
@@ -88,10 +87,6 @@ public:
     void stopPreview();
 
     static bool initJNI(JNIEnv *env);
-
-Q_SIGNALS:
-    void paused();
-    void resumed();
 
 private:
     JCamera(int cameraId, jobject cam);

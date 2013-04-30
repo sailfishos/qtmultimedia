@@ -309,6 +309,56 @@ void JCamera::setSceneMode(const QString &value)
     applyParameters();
 }
 
+QStringList JCamera::getSupportedWhiteBalance()
+{
+    QStringList whiteBalancePresets;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> presetsRef = m_parameters->callObjectMethod<jobject>("getSupportedWhiteBalance",
+                                                                                   "()Ljava/util/List;");
+
+        if (!presetsRef.isNull()) {
+            QJNIObject presets(presetsRef.object());
+            int count = presets.callMethod<jint>("size");
+            for (int i = 0; i < count; ++i) {
+                QJNILocalRef<jobject> wbRef = presets.callObjectMethod<jobject>("get",
+                                                                                "(I)Ljava/lang/Object;",
+                                                                                i);
+
+                QJNIObject wb(wbRef.object());
+                whiteBalancePresets.append(qt_convertJString(wb.callObjectMethod<jstring>("toString").object()));
+            }
+        }
+    }
+
+    return whiteBalancePresets;
+}
+
+QString JCamera::getWhiteBalance()
+{
+    QString value;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jstring> wb = m_parameters->callObjectMethod<jstring>("getWhiteBalance",
+                                                                           "()Ljava/lang/String;");
+        if (!wb.isNull())
+            value = qt_convertJString(wb.object());
+    }
+
+    return value;
+}
+
+void JCamera::setWhiteBalance(const QString &value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setWhiteBalance",
+                                   "(Ljava/lang/String;)V",
+                                   qt_toJString(value).object());
+    applyParameters();
+}
+
 void JCamera::startPreview()
 {
     callMethod<void>("startPreview");

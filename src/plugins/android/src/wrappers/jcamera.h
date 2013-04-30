@@ -83,6 +83,10 @@ public:
     QString getSceneMode();
     void setSceneMode(const QString &value);
 
+    QStringList getSupportedWhiteBalance();
+    QString getWhiteBalance();
+    void setWhiteBalance(const QString &value);
+
     void startPreview();
     void stopPreview();
 

@@ -39,43 +39,35 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDCAMERAIMAGEPROCESSINGCONTROL_H
+#define QANDROIDCAMERAIMAGEPROCESSINGCONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qcameraimageprocessingcontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
 
-class QAndroidCaptureService : public QMediaService
+class QAndroidCameraImageProcessingControl : public QCameraImageProcessingControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    explicit QAndroidCameraImageProcessingControl(QAndroidCameraSession *session);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    bool isParameterSupported(ProcessingParameter) const Q_DECL_OVERRIDE;
+    bool isParameterValueSupported(ProcessingParameter parameter, const QVariant &value) const Q_DECL_OVERRIDE;
+    QVariant parameter(ProcessingParameter parameter) const Q_DECL_OVERRIDE;
+    void setParameter(ProcessingParameter parameter, const QVariant &value) Q_DECL_OVERRIDE;
+
+private Q_SLOTS:
+    void onCameraOpened();
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
+    QAndroidCameraSession *m_session;
+
+    QHash<QCameraImageProcessing::WhiteBalanceMode, QString> m_supportedWhiteBalanceModes;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDCAMERAIMAGEPROCESSINGCONTROL_H

@@ -6,7 +6,8 @@ SOURCES += \
     $$PWD/qandroidvideodeviceselectorcontrol.cpp \
     $$PWD/qandroidcamerasession.cpp \
     $$PWD/qandroidcamerazoomcontrol.cpp \
-    $$PWD/qandroidcameraexposurecontrol.cpp
+    $$PWD/qandroidcameraexposurecontrol.cpp \
+    $$PWD/qandroidcameraimageprocessingcontrol.cpp
 
 HEADERS += \
     $$PWD/qandroidcaptureservice.h \
@@ -14,4 +15,5 @@ HEADERS += \
     $$PWD/qandroidvideodeviceselectorcontrol.h \
     $$PWD/qandroidcamerasession.h \
     $$PWD/qandroidcamerazoomcontrol.h \
-    $$PWD/qandroidcameraexposurecontrol.h
+    $$PWD/qandroidcameraexposurecontrol.h \
+    $$PWD/qandroidcameraimageprocessingcontrol.h

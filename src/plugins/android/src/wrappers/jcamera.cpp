@@ -55,14 +55,41 @@ static bool sizeLessThan(const QSize &s1, const QSize &s2)
     return s1.width() * s1.height() < s2.width() * s2.height();
 }
 
+// native method for QtCamera.java
+static void notifyPictureExposed(JNIEnv* , jobject, int id)
+{
+    JCamera *obj = g_objectMap.value(id, 0);
+    if (obj)
+        Q_EMIT obj->pictureExposed();
+}
+
+static void notifyPictureCaptured(JNIEnv *env, jobject, int id, jbyteArray data)
+{
+    JCamera *obj = g_objectMap.value(id, 0);
+    if (obj) {
+        QByteArray bytes;
+        int arrayLength = env->GetArrayLength(data);
+        bytes.resize(arrayLength);
+        env->GetByteArrayRegion(data, 0, arrayLength, (jbyte*)bytes.data());
+        Q_EMIT obj->pictureCaptured(bytes);
+    }
+}
+
 JCamera::JCamera(int cameraId, jobject cam)
     : QObject()
     , QJNIObject(cam)
     , m_cameraId(cameraId)
+    , m_info(0)
     , m_parameters(0)
 {
     if (m_jobject) {
         g_objectMap.insert(cameraId, this);
+
+        m_info = new QJNIObject("android/hardware/Camera$CameraInfo");
+        callStaticMethod<void>("android/hardware/Camera",
+                               "getCameraInfo",
+                               "(ILandroid/hardware/Camera$CameraInfo;)V",
+                               cameraId, m_info->object());
 
         QJNILocalRef<jobject> params = callObjectMethod<jobject>("getParameters",
                                                                  "()Landroid/hardware/Camera$Parameters;");
@@ -75,6 +102,7 @@ JCamera::~JCamera()
     if (m_jobject)
         g_objectMap.remove(m_cameraId);
     delete m_parameters;
+    delete m_info;
 }
 
 JCamera *JCamera::open(int cameraId)
@@ -109,9 +137,20 @@ void JCamera::reconnect()
 
 void JCamera::release()
 {
+    m_previewSize = QSize();
     delete m_parameters;
     m_parameters = 0;
     callMethod<void>("release");
+}
+
+JCamera::CameraFacing JCamera::getFacing()
+{
+    return CameraFacing(m_info->getField<jint>("facing"));
+}
+
+int JCamera::getNativeOrientation()
+{
+    return m_info->getField<jint>("orientation");
 }
 
 QSize JCamera::getPreferredPreviewSizeForVideo()
@@ -149,12 +188,14 @@ QList<QSize> JCamera::getSupportedPreviewSizes()
     return list;
 }
 
-void JCamera::setPreviewSize(int width, int height)
+void JCamera::setPreviewSize(const QSize &size)
 {
     if (!m_parameters || !m_parameters->isValid())
         return;
 
-    m_parameters->callMethod<void>("setPreviewSize", "(II)V", width, height);
+    m_previewSize = size;
+
+    m_parameters->callMethod<void>("setPreviewSize", "(II)V", size.width(), size.height());
     applyParameters();
 }
 
@@ -359,6 +400,61 @@ void JCamera::setWhiteBalance(const QString &value)
     applyParameters();
 }
 
+void JCamera::setRotation(int rotation)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setRotation", "(I)V", rotation);
+    applyParameters();
+}
+
+QList<QSize> JCamera::getSupportedPictureSizes()
+{
+    QList<QSize> list;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> sizeListRef = m_parameters->callObjectMethod<jobject>("getSupportedPictureSizes",
+                                                                                    "()Ljava/util/List;");
+        QJNIObject sizeList(sizeListRef.object());
+        int count = sizeList.callMethod<jint>("size");
+        for (int i = 0; i < count; ++i) {
+            QJNILocalRef<jobject> sizeRef = sizeList.callObjectMethod<jobject>("get",
+                                                                               "(I)Ljava/lang/Object;",
+                                                                               i);
+            QJNIObject size(sizeRef.object());
+            list.append(QSize(size.getField<jint>("width"), size.getField<jint>("height")));
+        }
+
+        qSort(list.begin(), list.end(), sizeLessThan);
+    }
+
+    return list;
+}
+
+void JCamera::setPictureSize(const QSize &size)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setPictureSize", "(II)V", size.width(), size.height());
+    applyParameters();
+}
+
+void JCamera::setJpegQuality(int quality)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setJpegQuality", "(I)V", quality);
+    applyParameters();
+}
+
+void JCamera::takePicture()
+{
+    callMethod<void>("takePicture");
+}
+
 void JCamera::startPreview()
 {
     callMethod<void>("startPreview");
@@ -376,14 +472,25 @@ void JCamera::applyParameters()
                      m_parameters->object());
 }
 
+static JNINativeMethod methods[] = {
+    {"notifyPictureExposed", "(I)V", (void *)notifyPictureExposed},
+    {"notifyPictureCaptured", "(I[B)V", (void *)notifyPictureCaptured}
+};
+
 bool JCamera::initJNI(JNIEnv *env)
 {
     jclass clazz = env->FindClass("org/qtproject/qt5/android/multimedia/QtCamera");
     if (env->ExceptionCheck())
         env->ExceptionClear();
 
-    if (clazz)
+    if (clazz) {
         g_qtCameraClass = static_cast<jclass>(env->NewGlobalRef(clazz));
+        if (env->RegisterNatives(g_qtCameraClass,
+                                 methods,
+                                 sizeof(methods) / sizeof(methods[0])) < 0) {
+            return false;
+        }
+    }
 
     return true;
 }

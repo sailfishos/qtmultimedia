@@ -48,6 +48,10 @@
 #include "qandroidcamerazoomcontrol.h"
 #include "qandroidcameraexposurecontrol.h"
 #include "qandroidcameraimageprocessingcontrol.h"
+#include "qandroidimageencodercontrol.h"
+#include "qandroidcameraimagecapturecontrol.h"
+#include "qandroidcameracapturedestinationcontrol.h"
+#include "qandroidcameracapturebufferformatcontrol.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -61,6 +65,10 @@ QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
     m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
     m_cameraExposureControl = new QAndroidCameraExposureControl(m_cameraSession);
     m_cameraImageProcessingControl = new QAndroidCameraImageProcessingControl(m_cameraSession);
+    m_imageEncoderControl = new QAndroidImageEncoderControl(m_cameraSession);
+    m_imageCaptureControl = new QAndroidCameraImageCaptureControl(m_cameraSession);
+    m_captureDestinationControl = new QAndroidCameraCaptureDestinationControl(m_cameraSession);
+    m_captureBufferFormatControl = new QAndroidCameraCaptureBufferFormatControl;
 }
 
 QAndroidCaptureService::~QAndroidCaptureService()
@@ -72,6 +80,10 @@ QAndroidCaptureService::~QAndroidCaptureService()
     delete m_cameraZoomControl;
     delete m_cameraExposureControl;
     delete m_cameraImageProcessingControl;
+    delete m_imageEncoderControl;
+    delete m_imageCaptureControl;
+    delete m_captureDestinationControl;
+    delete m_captureBufferFormatControl;
 }
 
 QMediaControl *QAndroidCaptureService::requestControl(const char *name)
@@ -90,6 +102,18 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 
     if (qstrcmp(name, QCameraImageProcessingControl_iid) == 0)
         return m_cameraImageProcessingControl;
+
+    if (qstrcmp(name, QImageEncoderControl_iid) == 0)
+        return m_imageEncoderControl;
+
+    if (qstrcmp(name, QCameraImageCaptureControl_iid) == 0)
+        return m_imageCaptureControl;
+
+    if (qstrcmp(name, QCameraCaptureDestinationControl_iid) == 0)
+        return m_captureDestinationControl;
+
+    if (qstrcmp(name, QCameraCaptureBufferFormatControl_iid) == 0)
+        return m_captureBufferFormatControl;
 
     if (qstrcmp(name, QVideoRendererControl_iid) == 0) {
         if (!m_videoRendererControl) {

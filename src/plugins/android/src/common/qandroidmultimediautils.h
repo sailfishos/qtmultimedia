@@ -39,51 +39,17 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDMULTIMEDIAUTILS_H
+#define QANDROIDMULTIMEDIAUTILS_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qglobal.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
-{
-    Q_OBJECT
-
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
-
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
-
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+// return the index of the closest value to <value> in <list>
+// (binary search)
+int qt_findClosestValue(const QList<int> &list, int value);
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDMULTIMEDIAUTILS_H

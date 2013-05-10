@@ -43,37 +43,10 @@
 
 #include "qandroidcamerasession.h"
 #include "jcamera.h"
+#include "qandroidmultimediautils.h"
 #include <qmath.h>
 
 QT_BEGIN_NAMESPACE
-
-// return the index of the closest value to <value> in <list>
-// (binary search)
-static int findClosestValue(const QList<int> &list, int value)
-{
-    if (list.size() < 2)
-        return 0;
-
-    int begin = 0;
-    int end = list.size() - 1;
-    int pivot = begin + (end - begin) / 2;
-    int v = list.at(pivot);
-
-    while (end - begin > 1) {
-        if (value == v)
-            return pivot;
-
-        if (value > v)
-            begin = pivot;
-        else
-            end = pivot;
-
-        pivot = begin + (end - begin) / 2;
-        v = list.at(pivot);
-    }
-
-    return value - v >= list.at(pivot + 1) - value ? pivot + 1 : pivot;
-}
 
 QAndroidCameraZoomControl::QAndroidCameraZoomControl(QAndroidCameraSession *session)
     : QCameraZoomControl()
@@ -133,7 +106,7 @@ void QAndroidCameraZoomControl::zoomTo(qreal optical, qreal digital)
     emit requestedDigitalZoomChanged(m_requestedZoom);
 
     digital = qBound(qreal(1), digital, m_maximumZoom);
-    int validZoomIndex = findClosestValue(m_zoomRatios, qRound(digital * 100));
+    int validZoomIndex = qt_findClosestValue(m_zoomRatios, qRound(digital * 100));
     qreal newZoom = m_zoomRatios.at(validZoomIndex) / qreal(100);
     if (!qFuzzyCompare(m_currentZoom, newZoom)) {
         m_cameraSession->camera()->setZoom(validZoomIndex);

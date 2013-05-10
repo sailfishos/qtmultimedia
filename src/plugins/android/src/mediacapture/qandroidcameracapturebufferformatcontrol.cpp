@@ -39,51 +39,28 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
-
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include "qandroidcameracapturebufferformatcontrol.h"
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+QAndroidCameraCaptureBufferFormatControl::QAndroidCameraCaptureBufferFormatControl()
+    : QCameraCaptureBufferFormatControl()
 {
-    Q_OBJECT
+}
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+QList<QVideoFrame::PixelFormat> QAndroidCameraCaptureBufferFormatControl::supportedBufferFormats() const
+{
+    return (QList<QVideoFrame::PixelFormat>() << QVideoFrame::Format_Jpeg);
+}
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+QVideoFrame::PixelFormat QAndroidCameraCaptureBufferFormatControl::bufferFormat() const
+{
+    return QVideoFrame::Format_Jpeg;
+}
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+void QAndroidCameraCaptureBufferFormatControl::setBufferFormat(QVideoFrame::PixelFormat format)
+{
+    Q_UNUSED(format)
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

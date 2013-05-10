@@ -45,7 +45,7 @@ import android.hardware.Camera;
 import android.graphics.SurfaceTexture;
 import android.util.Log;
 
-public class QtCamera
+public class QtCamera implements Camera.ShutterCallback, Camera.PictureCallback
 {
     private int m_cameraId = -1;
     private Camera m_camera = null;
@@ -138,4 +138,26 @@ public class QtCamera
     {
         m_camera.stopPreview();
     }
+
+    public void takePicture()
+    {
+        try {
+            m_camera.takePicture(this, null, this);
+        } catch(Exception e) {
+            Log.d(TAG, e.getMessage());
+        }
+    }
+
+    public void onShutter()
+    {
+        notifyPictureExposed(m_cameraId);
+    }
+
+    public void onPictureTaken(byte[] data, Camera camera)
+    {
+        notifyPictureCaptured(m_cameraId, data);
+    }
+
+    private static native void notifyPictureExposed(int id);
+    private static native void notifyPictureCaptured(int id, byte[] data);
 }

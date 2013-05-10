@@ -279,6 +279,14 @@ void QAndroidVideoRendererControl::stop()
     m_nativeSize = QSize();
 }
 
+QImage QAndroidVideoRendererControl::toImage()
+{
+    if (!m_fbo)
+        return QImage();
+
+    return m_fbo->toImage().mirrored();
+}
+
 void QAndroidVideoRendererControl::onFrameAvailable()
 {
     if (m_glContext)

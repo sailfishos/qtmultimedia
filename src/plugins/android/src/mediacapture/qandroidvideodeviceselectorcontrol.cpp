@@ -42,11 +42,8 @@
 #include "qandroidvideodeviceselectorcontrol.h"
 
 #include "qandroidcamerasession.h"
-#include <QtPlatformSupport/private/qjniobject_p.h>
+#include "jcamera.h"
 #include <QtPlatformSupport/private/qjnihelpers_p.h>
-
-#define CAMERA_FACING_BACK 0
-#define CAMERA_FACING_FRONT 1
 
 QT_BEGIN_NAMESPACE
 
@@ -116,14 +113,14 @@ void QAndroidVideoDeviceSelectorControl::update()
                                            "(ILandroid/hardware/Camera$CameraInfo;)V",
                                            i, cameraInfo.object());
 
-        int facing = cameraInfo.getField<jint>("facing");
+        JCamera::CameraFacing facing = JCamera::CameraFacing(cameraInfo.getField<jint>("facing"));
 
         switch (facing) {
-        case CAMERA_FACING_BACK:
+        case JCamera::CameraFacingBack:
             m_names.append("back");
             m_descriptions.append(QStringLiteral("Rear-facing camera"));
             break;
-        case CAMERA_FACING_FRONT:
+        case JCamera::CameraFacingFront:
             m_names.append("front");
             m_descriptions.append(QStringLiteral("Front-facing camera"));
             break;

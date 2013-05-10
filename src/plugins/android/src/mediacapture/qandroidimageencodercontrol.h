@@ -39,51 +39,34 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDIMAGEENCODERCONTROL_H
+#define QANDROIDIMAGEENCODERCONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qimageencodercontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
 
-class QAndroidCaptureService : public QMediaService
+class QAndroidImageEncoderControl : public QImageEncoderControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    explicit QAndroidImageEncoderControl(QAndroidCameraSession *session);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    QStringList supportedImageCodecs() const Q_DECL_OVERRIDE;
+    QString imageCodecDescription(const QString &codecName) const Q_DECL_OVERRIDE;
+    QList<QSize> supportedResolutions(const QImageEncoderSettings &settings, bool *continuous = 0) const Q_DECL_OVERRIDE;
+    QImageEncoderSettings imageSettings() const Q_DECL_OVERRIDE;
+    void setImageSettings(const QImageEncoderSettings &settings) Q_DECL_OVERRIDE;
+
+private Q_SLOTS:
+    void onCameraOpened();
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    QAndroidCameraSession *m_session;
+
+    QList<QSize> m_supportedResolutions;
 };
 
-QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDIMAGEENCODERCONTROL_H

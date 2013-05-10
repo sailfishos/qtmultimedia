@@ -8,7 +8,8 @@ HEADERS += \
     $$PWD/jsurfacetextureholder.h \
     $$PWD/jmediametadataretriever.h \
     $$PWD/jcamera.h \
-    $$PWD/jactivitystatelistener.h
+    $$PWD/jactivitystatelistener.h \
+    $$PWD/jmultimediautils.h
 
 SOURCES += \
     $$PWD/jmediaplayer.cpp \
@@ -16,4 +17,5 @@ SOURCES += \
     $$PWD/jsurfacetextureholder.cpp \
     $$PWD/jmediametadataretriever.cpp \
     $$PWD/jcamera.cpp \
-    $$PWD/jactivitystatelistener.cpp
+    $$PWD/jactivitystatelistener.cpp \
+    $$PWD/jmultimediautils.cpp

@@ -54,6 +54,7 @@ include(video/video.pri)
 ANDROID_BUNDLED_JAR_DEPENDENCIES = \
     jar/QtMultimedia-bundled.jar:org.qtproject.qt5.android.multimedia.QtCamera
 ANDROID_JAR_DEPENDENCIES = \
+    jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtMultimediaUtils \
     jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtActivityStateListener
 ANDROID_LIB_DEPENDENCIES = \
     plugins/mediaservice/libqtmedia_android.so

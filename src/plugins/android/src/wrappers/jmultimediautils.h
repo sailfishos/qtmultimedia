@@ -39,51 +39,33 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef JMULTIMEDIAUTILS_H
+#define JMULTIMEDIAUTILS_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qobject.h>
+#include <QtPlatformSupport/private/qjniobject_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+class JMultimediaUtils : public QObject, public QJNIObject
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    enum MediaType {
+        Music = 0,
+        Movies = 1,
+        DCIM = 2
+    };
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    JMultimediaUtils();
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    static int getDeviceOrientation();
+    static QString getDefaultMediaDirectory(MediaType type);
+    static void registerMediaFile(const QString &file);
+
+    static bool initJNI(JNIEnv *env);
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // JMULTIMEDIAUTILS_H

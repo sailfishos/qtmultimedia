@@ -39,51 +39,36 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#include "qandroidmultimediautils.h"
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qlist.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+int qt_findClosestValue(const QList<int> &list, int value)
 {
-    Q_OBJECT
+    if (list.size() < 2)
+        return 0;
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    int begin = 0;
+    int end = list.size() - 1;
+    int pivot = begin + (end - begin) / 2;
+    int v = list.at(pivot);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    while (end - begin > 1) {
+        if (value == v)
+            return pivot;
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+        if (value > v)
+            begin = pivot;
+        else
+            end = pivot;
+
+        pivot = begin + (end - begin) / 2;
+        v = list.at(pivot);
+    }
+
+    return value - v >= list.at(pivot + 1) - value ? pivot + 1 : pivot;
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

@@ -39,51 +39,48 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#include "qandroidcameraimagecapturecontrol.h"
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include "qandroidcamerasession.h"
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+QAndroidCameraImageCaptureControl::QAndroidCameraImageCaptureControl(QAndroidCameraSession *session)
+    : QCameraImageCaptureControl()
+    , m_session(session)
 {
-    Q_OBJECT
+    connect(m_session, SIGNAL(readyForCaptureChanged(bool)), this, SIGNAL(readyForCaptureChanged(bool)));
+    connect(m_session, SIGNAL(imageExposed(int)), this, SIGNAL(imageExposed(int)));
+    connect(m_session, SIGNAL(imageCaptured(int,QImage)), this, SIGNAL(imageCaptured(int,QImage)));
+    connect(m_session, SIGNAL(imageMetadataAvailable(int,QString,QVariant)), this, SIGNAL(imageMetadataAvailable(int,QString,QVariant)));
+    connect(m_session, SIGNAL(imageAvailable(int,QVideoFrame)), this, SIGNAL(imageAvailable(int,QVideoFrame)));
+    connect(m_session, SIGNAL(imageSaved(int,QString)), this, SIGNAL(imageSaved(int,QString)));
+    connect(m_session, SIGNAL(imageCaptureError(int,int,QString)), this, SIGNAL(error(int,int,QString)));
+}
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+bool QAndroidCameraImageCaptureControl::isReadyForCapture() const
+{
+    return m_session->isReadyForCapture();
+}
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+QCameraImageCapture::DriveMode QAndroidCameraImageCaptureControl::driveMode() const
+{
+    return m_session->driveMode();
+}
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+void QAndroidCameraImageCaptureControl::setDriveMode(QCameraImageCapture::DriveMode mode)
+{
+    m_session->setDriveMode(mode);
+}
+
+int QAndroidCameraImageCaptureControl::capture(const QString &fileName)
+{
+    return m_session->capture(fileName);
+}
+
+void QAndroidCameraImageCaptureControl::cancelCapture()
+{
+    m_session->cancelCapture();
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

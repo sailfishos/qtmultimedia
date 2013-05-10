@@ -39,51 +39,57 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#include "qandroidimageencodercontrol.h"
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include "qandroidcamerasession.h"
+#include "jcamera.h"
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+QAndroidImageEncoderControl::QAndroidImageEncoderControl(QAndroidCameraSession *session)
+    : QImageEncoderControl()
+    , m_session(session)
 {
-    Q_OBJECT
+    connect(m_session, SIGNAL(opened()),
+            this, SLOT(onCameraOpened()));
+}
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+QStringList QAndroidImageEncoderControl::supportedImageCodecs() const
+{
+    return QStringList() << QLatin1String("jpeg");
+}
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+QString QAndroidImageEncoderControl::imageCodecDescription(const QString &codecName) const
+{
+    if (codecName == QLatin1String("jpeg"))
+        return tr("JPEG image");
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+    return QString();
+}
+
+QList<QSize> QAndroidImageEncoderControl::supportedResolutions(const QImageEncoderSettings &settings, bool *continuous) const
+{
+    Q_UNUSED(settings);
+
+    if (continuous)
+        *continuous = false;
+
+    return m_supportedResolutions;
+}
+
+QImageEncoderSettings QAndroidImageEncoderControl::imageSettings() const
+{
+    return m_session->imageSettings();
+}
+
+void QAndroidImageEncoderControl::setImageSettings(const QImageEncoderSettings &settings)
+{
+    m_session->setImageSettings(settings);
+}
+
+void QAndroidImageEncoderControl::onCameraOpened()
+{
+    m_supportedResolutions = m_session->camera()->getSupportedPictureSizes();
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

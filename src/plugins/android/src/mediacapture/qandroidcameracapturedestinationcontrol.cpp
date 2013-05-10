@@ -39,51 +39,33 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#include "qandroidcameracapturedestinationcontrol.h"
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include "qandroidcamerasession.h"
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+QAndroidCameraCaptureDestinationControl::QAndroidCameraCaptureDestinationControl(QAndroidCameraSession *session)
+    : QCameraCaptureDestinationControl()
+    , m_session(session)
 {
-    Q_OBJECT
+    connect(m_session, SIGNAL(captureDestinationChanged(QCameraImageCapture::CaptureDestinations)),
+            this, SIGNAL(captureDestinationChanged(QCameraImageCapture::CaptureDestinations)));
+}
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+bool QAndroidCameraCaptureDestinationControl::isCaptureDestinationSupported(QCameraImageCapture::CaptureDestinations destination) const
+{
+    return m_session->isCaptureDestinationSupported(destination);
+}
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+QCameraImageCapture::CaptureDestinations QAndroidCameraCaptureDestinationControl::captureDestination() const
+{
+    return m_session->captureDestination();;
+}
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+void QAndroidCameraCaptureDestinationControl::setCaptureDestination(QCameraImageCapture::CaptureDestinations destination)
+{
+    m_session->setCaptureDestination(destination);
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

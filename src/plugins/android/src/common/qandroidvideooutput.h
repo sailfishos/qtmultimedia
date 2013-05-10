@@ -58,6 +58,7 @@ public:
     virtual jobject surfaceTexture() = 0;
     virtual void setVideoSize(const QSize &size) = 0;
     virtual void stop() = 0;
+    virtual QImage toImage() = 0;
 };
 
 QT_END_NAMESPACE

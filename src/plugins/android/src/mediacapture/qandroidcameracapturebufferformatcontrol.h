@@ -39,51 +39,24 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDCAMERACAPTUREBUFFERFORMATCONTROL_H
+#define QANDROIDCAMERACAPTUREBUFFERFORMATCONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qcameracapturebufferformatcontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+class QAndroidCameraCaptureBufferFormatControl : public QCameraCaptureBufferFormatControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    QAndroidCameraCaptureBufferFormatControl();
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
-
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    QList<QVideoFrame::PixelFormat> supportedBufferFormats() const Q_DECL_OVERRIDE;
+    QVideoFrame::PixelFormat bufferFormat() const Q_DECL_OVERRIDE;
+    void setBufferFormat(QVideoFrame::PixelFormat format) Q_DECL_OVERRIDE;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDCAMERACAPTUREBUFFERFORMATCONTROL_H

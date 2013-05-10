@@ -39,51 +39,32 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDMEDIASTORAGELOCATION_H
+#define QANDROIDMEDIASTORAGELOCATION_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <QCamera>
+#include <QDir>
+#include <QHash>
+#include <QMutex>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
-
-class QAndroidCaptureService : public QMediaService
+class QAndroidMediaStorageLocation
 {
-    Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    QAndroidMediaStorageLocation();
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    QDir defaultDir(QCamera::CaptureMode mode) const;
+
+    QString generateFileName(const QString &requestedName, QCamera::CaptureMode mode, const QString &prefix, const QString &extension) const;
+    QString generateFileName(const QString &prefix, const QDir &dir, const QString &extension) const;
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    mutable QHash<QString, qint64> m_lastUsedIndex;
+
+    mutable QMutex m_mutex;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDMEDIASTORAGELOCATION_H

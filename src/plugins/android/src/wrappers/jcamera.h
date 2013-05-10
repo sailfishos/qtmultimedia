@@ -52,6 +52,11 @@ class JCamera : public QObject, public QJNIObject
 {
     Q_OBJECT
 public:
+    enum CameraFacing {
+        CameraFacingBack = 0,
+        CameraFacingFront = 1
+    };
+
     ~JCamera();
 
     static JCamera *open(int cameraId);
@@ -61,10 +66,14 @@ public:
     void reconnect();
     void release();
 
+    CameraFacing getFacing();
+    int getNativeOrientation();
+
     QSize getPreferredPreviewSizeForVideo();
     QList<QSize> getSupportedPreviewSizes();
 
-    void setPreviewSize(int width, int height);
+    QSize previewSize() const { return m_previewSize; }
+    void setPreviewSize(const QSize &size);
     void setPreviewTexture(jobject surfaceTexture);
 
     bool isZoomSupported();
@@ -87,17 +96,32 @@ public:
     QString getWhiteBalance();
     void setWhiteBalance(const QString &value);
 
+    void setRotation(int rotation);
+
+    QList<QSize> getSupportedPictureSizes();
+    void setPictureSize(const QSize &size);
+    void setJpegQuality(int quality);
+
     void startPreview();
     void stopPreview();
 
+    void takePicture();
+
     static bool initJNI(JNIEnv *env);
+
+Q_SIGNALS:
+    void pictureExposed();
+    void pictureCaptured(const QByteArray &data);
 
 private:
     JCamera(int cameraId, jobject cam);
     void applyParameters();
 
     int m_cameraId;
+    QJNIObject *m_info;
     QJNIObject *m_parameters;
+
+    QSize m_previewSize;
 };
 
 QT_END_NAMESPACE

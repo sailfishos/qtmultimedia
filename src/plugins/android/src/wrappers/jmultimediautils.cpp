@@ -39,51 +39,52 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#include "jmultimediautils.h"
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <QtPlatformSupport/private/qjnihelpers_p.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
-class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
+static jclass g_qtMultimediaUtilsClass = 0;
 
-class QAndroidCaptureService : public QMediaService
+JMultimediaUtils::JMultimediaUtils()
+    : QObject()
+    , QJNIObject(g_qtMultimediaUtilsClass)
 {
-    Q_OBJECT
+}
 
-public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+int JMultimediaUtils::getDeviceOrientation()
+{
+    return callStaticMethod<jint>(g_qtMultimediaUtilsClass, "getDeviceOrientation");
+}
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+QString JMultimediaUtils::getDefaultMediaDirectory(MediaType type)
+{
+    QJNILocalRef<jstring> path = callStaticObjectMethod<jstring>(g_qtMultimediaUtilsClass,
+                                                                 "getDefaultMediaDirectory",
+                                                                 "(I)Ljava/lang/String;",
+                                                                 jint(type));
+    return qt_convertJString(path.object());
+}
 
-private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
-};
+void JMultimediaUtils::registerMediaFile(const QString &file)
+{
+    callStaticMethod<void>(g_qtMultimediaUtilsClass,
+                           "registerMediaFile",
+                           "(Ljava/lang/String;)V",
+                           qt_toJString(file).object());
+}
+
+bool JMultimediaUtils::initJNI(JNIEnv *env)
+{
+    jclass clazz = env->FindClass("org/qtproject/qt5/android/multimedia/QtMultimediaUtils");
+    if (env->ExceptionCheck())
+        env->ExceptionClear();
+
+    if (clazz)
+        g_qtMultimediaUtilsClass = static_cast<jclass>(env->NewGlobalRef(clazz));
+
+    return true;
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDCAPTURESERVICE_H

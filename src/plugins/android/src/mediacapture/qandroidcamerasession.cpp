@@ -191,6 +191,8 @@ void QAndroidCameraSession::startPreview()
     if (m_videoOutput)
         m_camera->setPreviewTexture(m_videoOutput->surfaceTexture());
 
+    JMultimediaUtils::enableOrientationListener(true);
+
     m_camera->startPreview();
     m_previewStarted = true;
 
@@ -207,6 +209,8 @@ void QAndroidCameraSession::stopPreview()
 
     m_status = QCamera::StoppingStatus;
     emit statusChanged(m_status);
+
+    JMultimediaUtils::enableOrientationListener(false);
 
     m_camera->stopPreview();
     if (m_videoOutput)

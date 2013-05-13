@@ -59,6 +59,7 @@ public:
 
     JMultimediaUtils();
 
+    static void enableOrientationListener(bool enable);
     static int getDeviceOrientation();
     static QString getDefaultMediaDirectory(MediaType type);
     static void registerMediaFile(const QString &file);

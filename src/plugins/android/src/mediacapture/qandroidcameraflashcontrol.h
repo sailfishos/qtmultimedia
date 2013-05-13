@@ -39,97 +39,35 @@
 **
 ****************************************************************************/
 
-#ifndef JCAMERA_H
-#define JCAMERA_H
+#ifndef QANDROIDCAMERAFLASHCONTROL_H
+#define QANDROIDCAMERAFLASHCONTROL_H
 
-#include <qobject.h>
-#include <QtPlatformSupport/private/qjniobject_p.h>
-#include <qsize.h>
+#include <qcameraflashcontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class JCamera : public QObject, public QJNIObject
+class QAndroidCameraSession;
+
+class QAndroidCameraFlashControl : public QCameraFlashControl
 {
     Q_OBJECT
 public:
-    enum CameraFacing {
-        CameraFacingBack = 0,
-        CameraFacingFront = 1
-    };
+    explicit QAndroidCameraFlashControl(QAndroidCameraSession *session);
 
-    ~JCamera();
+    QCameraExposure::FlashModes flashMode() const Q_DECL_OVERRIDE;
+    void setFlashMode(QCameraExposure::FlashModes mode) Q_DECL_OVERRIDE;
+    bool isFlashModeSupported(QCameraExposure::FlashModes mode) const Q_DECL_OVERRIDE;
+    bool isFlashReady() const Q_DECL_OVERRIDE;
 
-    static JCamera *open(int cameraId);
-
-    void lock();
-    void unlock();
-    void reconnect();
-    void release();
-
-    CameraFacing getFacing();
-    int getNativeOrientation();
-
-    QSize getPreferredPreviewSizeForVideo();
-    QList<QSize> getSupportedPreviewSizes();
-
-    QSize previewSize() const { return m_previewSize; }
-    void setPreviewSize(const QSize &size);
-    void setPreviewTexture(jobject surfaceTexture);
-
-    bool isZoomSupported();
-    int getMaxZoom();
-    QList<int> getZoomRatios();
-    int getZoom();
-    void setZoom(int value);
-
-    QStringList getSupportedFlashModes();
-    QString getFlashMode();
-    void setFlashMode(const QString &value);
-
-    int getExposureCompensation();
-    void setExposureCompensation(int value);
-    float getExposureCompensationStep();
-    int getMinExposureCompensation();
-    int getMaxExposureCompensation();
-
-    QStringList getSupportedSceneModes();
-    QString getSceneMode();
-    void setSceneMode(const QString &value);
-
-    QStringList getSupportedWhiteBalance();
-    QString getWhiteBalance();
-    void setWhiteBalance(const QString &value);
-
-    void setRotation(int rotation);
-
-    QList<QSize> getSupportedPictureSizes();
-    void setPictureSize(const QSize &size);
-    void setJpegQuality(int quality);
-
-    void startPreview();
-    void stopPreview();
-
-    void takePicture();
-
-    static bool initJNI(JNIEnv *env);
-
-Q_SIGNALS:
-    void pictureExposed();
-    void pictureCaptured(const QByteArray &data);
+private Q_SLOTS:
+    void onCameraOpened();
 
 private:
-    JCamera(int cameraId, jobject cam);
-    void applyParameters();
-
-    QStringList callStringListMethod(const char *methodName);
-
-    int m_cameraId;
-    QJNIObject *m_info;
-    QJNIObject *m_parameters;
-
-    QSize m_previewSize;
+    QAndroidCameraSession *m_session;
+    QList<QCameraExposure::FlashModes> m_supportedFlashModes;
+    QCameraExposure::FlashModes m_flashMode;
 };
 
 QT_END_NAMESPACE
 
-#endif // JCAMERA_H
+#endif // QANDROIDCAMERAFLASHCONTROL_H

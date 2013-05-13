@@ -259,6 +259,36 @@ void JCamera::setZoom(int value)
     applyParameters();
 }
 
+QStringList JCamera::getSupportedFlashModes()
+{
+    return callStringListMethod("getSupportedFlashModes");
+}
+
+QString JCamera::getFlashMode()
+{
+    QString value;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jstring> flashMode = m_parameters->callObjectMethod<jstring>("getFlashMode",
+                                                                                  "()Ljava/lang/String;");
+        if (!flashMode.isNull())
+            value = qt_convertJString(flashMode.object());
+    }
+
+    return value;
+}
+
+void JCamera::setFlashMode(const QString &value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setFlashMode",
+                                   "(Ljava/lang/String;)V",
+                                   qt_toJString(value).object());
+    applyParameters();
+}
+
 int JCamera::getExposureCompensation()
 {
     if (!m_parameters || !m_parameters->isValid())
@@ -302,27 +332,7 @@ int JCamera::getMaxExposureCompensation()
 
 QStringList JCamera::getSupportedSceneModes()
 {
-    QStringList sceneModes;
-
-    if (m_parameters && m_parameters->isValid()) {
-        QJNILocalRef<jobject> sceneModesRef = m_parameters->callObjectMethod<jobject>("getSupportedSceneModes",
-                                                                                      "()Ljava/util/List;");
-
-        if (!sceneModesRef.isNull()) {
-            QJNIObject sceneModeList(sceneModesRef.object());
-            int count = sceneModeList.callMethod<jint>("size");
-            for (int i = 0; i < count; ++i) {
-                QJNILocalRef<jobject> sceneModeRef = sceneModeList.callObjectMethod<jobject>("get",
-                                                                                             "(I)Ljava/lang/Object;",
-                                                                                             i);
-
-                QJNIObject sceneMode(sceneModeRef.object());
-                sceneModes.append(qt_convertJString(sceneMode.callObjectMethod<jstring>("toString").object()));
-            }
-        }
-    }
-
-    return sceneModes;
+    return callStringListMethod("getSupportedSceneModes");
 }
 
 QString JCamera::getSceneMode()
@@ -352,27 +362,7 @@ void JCamera::setSceneMode(const QString &value)
 
 QStringList JCamera::getSupportedWhiteBalance()
 {
-    QStringList whiteBalancePresets;
-
-    if (m_parameters && m_parameters->isValid()) {
-        QJNILocalRef<jobject> presetsRef = m_parameters->callObjectMethod<jobject>("getSupportedWhiteBalance",
-                                                                                   "()Ljava/util/List;");
-
-        if (!presetsRef.isNull()) {
-            QJNIObject presets(presetsRef.object());
-            int count = presets.callMethod<jint>("size");
-            for (int i = 0; i < count; ++i) {
-                QJNILocalRef<jobject> wbRef = presets.callObjectMethod<jobject>("get",
-                                                                                "(I)Ljava/lang/Object;",
-                                                                                i);
-
-                QJNIObject wb(wbRef.object());
-                whiteBalancePresets.append(qt_convertJString(wb.callObjectMethod<jstring>("toString").object()));
-            }
-        }
-    }
-
-    return whiteBalancePresets;
+    return callStringListMethod("getSupportedWhiteBalance");
 }
 
 QString JCamera::getWhiteBalance()
@@ -470,6 +460,31 @@ void JCamera::applyParameters()
     callMethod<void>("setParameters",
                      "(Landroid/hardware/Camera$Parameters;)V",
                      m_parameters->object());
+}
+
+QStringList JCamera::callStringListMethod(const char *methodName)
+{
+    QStringList stringList;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> listRef = m_parameters->callObjectMethod<jobject>(methodName,
+                                                                                "()Ljava/util/List;");
+
+        if (!listRef.isNull()) {
+            QJNIObject list(listRef.object());
+            int count = list.callMethod<jint>("size");
+            for (int i = 0; i < count; ++i) {
+                QJNILocalRef<jobject> stringRef = list.callObjectMethod<jobject>("get",
+                                                                                 "(I)Ljava/lang/Object;",
+                                                                                 i);
+
+                QJNIObject string(stringRef.object());
+                stringList.append(qt_convertJString(string.callObjectMethod<jstring>("toString").object()));
+            }
+        }
+    }
+
+    return stringList;
 }
 
 static JNINativeMethod methods[] = {

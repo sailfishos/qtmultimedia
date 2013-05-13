@@ -53,6 +53,7 @@ class QAndroidCameraSession;
 class QAndroidVideoRendererControl;
 class QAndroidCameraZoomControl;
 class QAndroidCameraExposureControl;
+class QAndroidCameraFlashControl;
 class QAndroidCameraImageProcessingControl;
 class QAndroidImageEncoderControl;
 class QAndroidCameraImageCaptureControl;
@@ -77,6 +78,7 @@ private:
     QAndroidVideoRendererControl *m_videoRendererControl;
     QAndroidCameraZoomControl *m_cameraZoomControl;
     QAndroidCameraExposureControl *m_cameraExposureControl;
+    QAndroidCameraFlashControl *m_cameraFlashControl;
     QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
     QAndroidImageEncoderControl *m_imageEncoderControl;
     QAndroidCameraImageCaptureControl *m_imageCaptureControl;

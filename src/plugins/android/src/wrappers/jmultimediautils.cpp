@@ -53,6 +53,11 @@ JMultimediaUtils::JMultimediaUtils()
 {
 }
 
+void JMultimediaUtils::enableOrientationListener(bool enable)
+{
+    callStaticMethod<void>(g_qtMultimediaUtilsClass, "enableOrientationListener", "(Z)V", enable);
+}
+
 int JMultimediaUtils::getDeviceOrientation()
 {
     return callStaticMethod<jint>(g_qtMultimediaUtilsClass, "getDeviceOrientation");

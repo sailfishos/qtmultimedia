@@ -77,11 +77,18 @@ public class QtMultimediaUtils
     {
         m_activity = activity;
         m_orientationListener = new OrientationListener(activity);
-        m_orientationListener.enable();
     }
 
     public QtMultimediaUtils()
     {
+    }
+
+    static void enableOrientationListener(boolean enable)
+    {
+        if (enable)
+            m_orientationListener.enable();
+        else
+            m_orientationListener.disable();
     }
 
     static int getDeviceOrientation()

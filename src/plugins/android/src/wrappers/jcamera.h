@@ -45,6 +45,7 @@
 #include <qobject.h>
 #include <QtPlatformSupport/private/qjniobject_p.h>
 #include <qsize.h>
+#include <qrect.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -86,6 +87,25 @@ public:
     QString getFlashMode();
     void setFlashMode(const QString &value);
 
+    QStringList getSupportedFocusModes();
+    QString getFocusMode();
+    void setFocusMode(const QString &value);
+
+    int getMaxNumFocusAreas();
+    QList<QRect> getFocusAreas();
+    void setFocusAreas(const QList<QRect> &areas);
+
+    void autoFocus();
+    void cancelAutoFocus();
+
+    bool isAutoExposureLockSupported();
+    bool getAutoExposureLock();
+    void setAutoExposureLock(bool toggle);
+
+    bool isAutoWhiteBalanceLockSupported();
+    bool getAutoWhiteBalanceLock();
+    void setAutoWhiteBalanceLock(bool toggle);
+
     int getExposureCompensation();
     void setExposureCompensation(int value);
     float getExposureCompensationStep();
@@ -114,6 +134,13 @@ public:
     static bool initJNI(JNIEnv *env);
 
 Q_SIGNALS:
+    void previewSizeChanged();
+
+    void autoFocusStarted();
+    void autoFocusComplete(bool success);
+
+    void whiteBalanceChanged();
+
     void pictureExposed();
     void pictureCaptured(const QByteArray &data);
 
@@ -128,6 +155,8 @@ private:
     QJNIObject *m_parameters;
 
     QSize m_previewSize;
+
+    bool m_hasAPI14;
 };
 
 QT_END_NAMESPACE

@@ -48,6 +48,8 @@
 #include "qandroidcamerazoomcontrol.h"
 #include "qandroidcameraexposurecontrol.h"
 #include "qandroidcameraflashcontrol.h"
+#include "qandroidcamerafocuscontrol.h"
+#include "qandroidcameralockscontrol.h"
 #include "qandroidcameraimageprocessingcontrol.h"
 #include "qandroidimageencodercontrol.h"
 #include "qandroidcameraimagecapturecontrol.h"
@@ -66,6 +68,8 @@ QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
     m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
     m_cameraExposureControl = new QAndroidCameraExposureControl(m_cameraSession);
     m_cameraFlashControl = new QAndroidCameraFlashControl(m_cameraSession);
+    m_cameraFocusControl = new QAndroidCameraFocusControl(m_cameraSession);
+    m_cameraLocksControl = new QAndroidCameraLocksControl(m_cameraSession);
     m_cameraImageProcessingControl = new QAndroidCameraImageProcessingControl(m_cameraSession);
     m_imageEncoderControl = new QAndroidImageEncoderControl(m_cameraSession);
     m_imageCaptureControl = new QAndroidCameraImageCaptureControl(m_cameraSession);
@@ -82,6 +86,8 @@ QAndroidCaptureService::~QAndroidCaptureService()
     delete m_cameraZoomControl;
     delete m_cameraExposureControl;
     delete m_cameraFlashControl;
+    delete m_cameraFocusControl;
+    delete m_cameraLocksControl;
     delete m_cameraImageProcessingControl;
     delete m_imageEncoderControl;
     delete m_imageCaptureControl;
@@ -105,6 +111,12 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 
     if (qstrcmp(name, QCameraFlashControl_iid) == 0)
         return m_cameraFlashControl;
+
+    if (qstrcmp(name, QCameraFocusControl_iid) == 0)
+        return m_cameraFocusControl;
+
+    if (qstrcmp(name, QCameraLocksControl_iid) == 0)
+        return m_cameraLocksControl;
 
     if (qstrcmp(name, QCameraImageProcessingControl_iid) == 0)
         return m_cameraImageProcessingControl;

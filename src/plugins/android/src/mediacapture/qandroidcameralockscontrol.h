@@ -39,57 +39,49 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDCAMERALOCKSCONTROL_H
+#define QANDROIDCAMERALOCKSCONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qcameralockscontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraFlashControl;
-class QAndroidCameraFocusControl;
-class QAndroidCameraLocksControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
+class QTimer;
 
-class QAndroidCaptureService : public QMediaService
+class QAndroidCameraLocksControl : public QCameraLocksControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    explicit QAndroidCameraLocksControl(QAndroidCameraSession *session);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    QCamera::LockTypes supportedLocks() const Q_DECL_OVERRIDE;
+    QCamera::LockStatus lockStatus(QCamera::LockType lock) const Q_DECL_OVERRIDE;
+    void searchAndLock(QCamera::LockTypes locks) Q_DECL_OVERRIDE;
+    void unlock(QCamera::LockTypes locks) Q_DECL_OVERRIDE;
+
+private Q_SLOTS:
+    void onCameraOpened();
+    void onCameraAutoFocusComplete(bool success);
+    void onRecalculateTimeOut();
+    void onWhiteBalanceChanged();
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraFlashControl *m_cameraFlashControl;
-    QAndroidCameraFocusControl *m_cameraFocusControl;
-    QAndroidCameraLocksControl *m_cameraLocksControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    void setFocusLockStatus(QCamera::LockStatus status, QCamera::LockChangeReason reason);
+    void setWhiteBalanceLockStatus(QCamera::LockStatus status, QCamera::LockChangeReason reason);
+    void setExposureLockStatus(QCamera::LockStatus status, QCamera::LockChangeReason reason);
+
+    QAndroidCameraSession *m_session;
+
+    QTimer *m_recalculateTimer;
+
+    QCamera::LockTypes m_supportedLocks;
+
+    QCamera::LockStatus m_focusLockStatus;
+    QCamera::LockStatus m_exposureLockStatus;
+    QCamera::LockStatus m_whiteBalanceLockStatus;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDCAMERALOCKSCONTROL_H

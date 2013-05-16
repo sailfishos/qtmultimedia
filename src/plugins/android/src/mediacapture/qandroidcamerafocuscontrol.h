@@ -39,57 +39,55 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDCAPTURESERVICE_H
-#define QANDROIDCAPTURESERVICE_H
+#ifndef QANDROIDCAMERAFOCUSCONTROL_H
+#define QANDROIDCAMERAFOCUSCONTROL_H
 
-#include <qmediaservice.h>
-#include <qmediacontrol.h>
+#include <qcamerafocuscontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidCameraControl;
-class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
-class QAndroidVideoRendererControl;
-class QAndroidCameraZoomControl;
-class QAndroidCameraExposureControl;
-class QAndroidCameraFlashControl;
-class QAndroidCameraFocusControl;
-class QAndroidCameraLocksControl;
-class QAndroidCameraImageProcessingControl;
-class QAndroidImageEncoderControl;
-class QAndroidCameraImageCaptureControl;
-class QAndroidCameraCaptureDestinationControl;
-class QAndroidCameraCaptureBufferFormatControl;
 
-class QAndroidCaptureService : public QMediaService
+class QAndroidCameraFocusControl : public QCameraFocusControl
 {
     Q_OBJECT
-
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
-    virtual ~QAndroidCaptureService();
+    explicit QAndroidCameraFocusControl(QAndroidCameraSession *session);
 
-    QMediaControl *requestControl(const char *name);
-    void releaseControl(QMediaControl *);
+    QCameraFocus::FocusModes focusMode() const Q_DECL_OVERRIDE;
+    void setFocusMode(QCameraFocus::FocusModes mode) Q_DECL_OVERRIDE;
+    bool isFocusModeSupported(QCameraFocus::FocusModes mode) const Q_DECL_OVERRIDE;
+    QCameraFocus::FocusPointMode focusPointMode() const Q_DECL_OVERRIDE;
+    void setFocusPointMode(QCameraFocus::FocusPointMode mode) Q_DECL_OVERRIDE;
+    bool isFocusPointModeSupported(QCameraFocus::FocusPointMode mode) const Q_DECL_OVERRIDE;
+    QPointF customFocusPoint() const Q_DECL_OVERRIDE;
+    void setCustomFocusPoint(const QPointF &point) Q_DECL_OVERRIDE;
+    QCameraFocusZoneList focusZones() const Q_DECL_OVERRIDE;
+
+private Q_SLOTS:
+    void onCameraOpened();
+    void onViewportSizeChanged();
+    void onAutoFocusStarted();
+    void onAutoFocusComplete(bool success);
 
 private:
-    QAndroidCameraControl *m_cameraControl;
-    QAndroidVideoDeviceSelectorControl *m_videoInputControl;
-    QAndroidCameraSession *m_cameraSession;
-    QAndroidVideoRendererControl *m_videoRendererControl;
-    QAndroidCameraZoomControl *m_cameraZoomControl;
-    QAndroidCameraExposureControl *m_cameraExposureControl;
-    QAndroidCameraFlashControl *m_cameraFlashControl;
-    QAndroidCameraFocusControl *m_cameraFocusControl;
-    QAndroidCameraLocksControl *m_cameraLocksControl;
-    QAndroidCameraImageProcessingControl *m_cameraImageProcessingControl;
-    QAndroidImageEncoderControl *m_imageEncoderControl;
-    QAndroidCameraImageCaptureControl *m_imageCaptureControl;
-    QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
-    QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    void updateFocusZones(QCameraFocusZone::FocusZoneStatus status = QCameraFocusZone::Selected);
+    void setCameraFocusArea();
+
+    QAndroidCameraSession *m_session;
+
+    QCameraFocus::FocusPointMode m_focusPointMode;
+    QPointF m_actualFocusPoint;
+    QPointF m_customFocusPoint;
+    QCameraFocusZoneList m_focusZones;
+
+    QList<QCameraFocus::FocusModes> m_supportedFocusModes;
+    bool m_continuousPictureFocusSupported;
+    bool m_continuousVideoFocusSupported;
+
+    QList<QCameraFocus::FocusPointMode> m_supportedFocusPointModes;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDCAPTURESERVICE_H
+#endif // QANDROIDCAMERAFOCUSCONTROL_H

@@ -13,7 +13,9 @@ SOURCES += \
     $$PWD/qandroidcameracapturedestinationcontrol.cpp \
     $$PWD/qandroidcameracapturebufferformatcontrol.cpp \
     $$PWD/qandroidmediastoragelocation.cpp \
-    $$PWD/qandroidcameraflashcontrol.cpp
+    $$PWD/qandroidcameraflashcontrol.cpp \
+    $$PWD/qandroidcamerafocuscontrol.cpp \
+    $$PWD/qandroidcameralockscontrol.cpp
 
 HEADERS += \
     $$PWD/qandroidcaptureservice.h \
@@ -28,4 +30,6 @@ HEADERS += \
     $$PWD/qandroidcameracapturedestinationcontrol.h \
     $$PWD/qandroidcameracapturebufferformatcontrol.h \
     $$PWD/qandroidmediastoragelocation.h \
-    $$PWD/qandroidcameraflashcontrol.h
+    $$PWD/qandroidcameraflashcontrol.h \
+    $$PWD/qandroidcamerafocuscontrol.h \
+    $$PWD/qandroidcameralockscontrol.h

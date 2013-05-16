@@ -45,7 +45,7 @@ import android.hardware.Camera;
 import android.graphics.SurfaceTexture;
 import android.util.Log;
 
-public class QtCamera implements Camera.ShutterCallback, Camera.PictureCallback
+public class QtCamera implements Camera.ShutterCallback, Camera.PictureCallback, Camera.AutoFocusCallback
 {
     private int m_cameraId = -1;
     private Camera m_camera = null;
@@ -139,6 +139,16 @@ public class QtCamera implements Camera.ShutterCallback, Camera.PictureCallback
         m_camera.stopPreview();
     }
 
+    public void autoFocus()
+    {
+        m_camera.autoFocus(this);
+    }
+
+    public void cancelAutoFocus()
+    {
+        m_camera.cancelAutoFocus();
+    }
+
     public void takePicture()
     {
         try {
@@ -158,6 +168,12 @@ public class QtCamera implements Camera.ShutterCallback, Camera.PictureCallback
         notifyPictureCaptured(m_cameraId, data);
     }
 
+    public void onAutoFocus(boolean success, Camera camera)
+    {
+        notifyAutoFocusComplete(m_cameraId, success);
+    }
+
+    private static native void notifyAutoFocusComplete(int id, boolean success);
     private static native void notifyPictureExposed(int id);
     private static native void notifyPictureCaptured(int id, byte[] data);
 }

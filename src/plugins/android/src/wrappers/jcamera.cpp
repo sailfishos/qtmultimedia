@@ -55,7 +55,39 @@ static bool sizeLessThan(const QSize &s1, const QSize &s2)
     return s1.width() * s1.height() < s2.width() * s2.height();
 }
 
+static QRect areaToRect(jobject areaObj)
+{
+    QJNIObject area(areaObj);
+    QJNILocalRef<jobject> rectRef = area.getObjectField<jobject>("rect", "android/graphics/Rect");
+    QJNIObject rect(rectRef.object());
+
+    return QRect(rect.getField<jint>("left"),
+                 rect.getField<jint>("top"),
+                 rect.callMethod<jint>("width"),
+                 rect.callMethod<jint>("height"));
+}
+
+static QJNILocalRef<jobject> rectToArea(const QRect &rect)
+{
+    QJNIObject jrect("android/graphics/Rect",
+                     "(IIII)V",
+                     rect.left(), rect.top(), rect.right(), rect.bottom());
+
+    QJNIObject area("android/hardware/Camera$Area",
+                    "(Landroid/graphics/Rect;I)V",
+                    jrect.object(), 500);
+
+    return QJNILocalRef<jobject>(QAttachedJNIEnv()->NewLocalRef(area.object()));
+}
+
 // native method for QtCamera.java
+static void notifyAutoFocusComplete(JNIEnv* , jobject, int id, jboolean success)
+{
+    JCamera *obj = g_objectMap.value(id, 0);
+    if (obj)
+        Q_EMIT obj->autoFocusComplete(success);
+}
+
 static void notifyPictureExposed(JNIEnv* , jobject, int id)
 {
     JCamera *obj = g_objectMap.value(id, 0);
@@ -81,6 +113,7 @@ JCamera::JCamera(int cameraId, jobject cam)
     , m_cameraId(cameraId)
     , m_info(0)
     , m_parameters(0)
+    , m_hasAPI14(false)
 {
     if (m_jobject) {
         g_objectMap.insert(cameraId, this);
@@ -94,6 +127,23 @@ JCamera::JCamera(int cameraId, jobject cam)
         QJNILocalRef<jobject> params = callObjectMethod<jobject>("getParameters",
                                                                  "()Landroid/hardware/Camera$Parameters;");
         m_parameters = new QJNIObject(params.object());
+
+        // Check if API 14 is available
+        QAttachedJNIEnv env;
+        jclass clazz = env->FindClass("android/hardware/Camera");
+        if (env->ExceptionCheck()) {
+            clazz = 0;
+            env->ExceptionClear();
+        }
+        if (clazz) {
+            // startFaceDetection() was added in API 14
+            jmethodID id = env->GetMethodID(clazz, "startFaceDetection", "()V");
+            if (env->ExceptionCheck()) {
+                id = 0;
+                env->ExceptionClear();
+            }
+            m_hasAPI14 = bool(id);
+        }
     }
 }
 
@@ -197,6 +247,8 @@ void JCamera::setPreviewSize(const QSize &size)
 
     m_parameters->callMethod<void>("setPreviewSize", "(II)V", size.width(), size.height());
     applyParameters();
+
+    emit previewSizeChanged();
 }
 
 void JCamera::setPreviewTexture(jobject surfaceTexture)
@@ -286,6 +338,154 @@ void JCamera::setFlashMode(const QString &value)
     m_parameters->callMethod<void>("setFlashMode",
                                    "(Ljava/lang/String;)V",
                                    qt_toJString(value).object());
+    applyParameters();
+}
+
+QStringList JCamera::getSupportedFocusModes()
+{
+    return callStringListMethod("getSupportedFocusModes");
+}
+
+QString JCamera::getFocusMode()
+{
+    QString value;
+
+    if (m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jstring> focusMode = m_parameters->callObjectMethod<jstring>("getFocusMode",
+                                                                                  "()Ljava/lang/String;");
+        if (!focusMode.isNull())
+            value = qt_convertJString(focusMode.object());
+    }
+
+    return value;
+}
+
+void JCamera::setFocusMode(const QString &value)
+{
+    if (!m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setFocusMode",
+                                   "(Ljava/lang/String;)V",
+                                   qt_toJString(value).object());
+    applyParameters();
+}
+
+int JCamera::getMaxNumFocusAreas()
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return 0;
+
+    return m_parameters->callMethod<jint>("getMaxNumFocusAreas");
+}
+
+QList<QRect> JCamera::getFocusAreas()
+{
+    QList<QRect> areas;
+
+    if (m_hasAPI14 && m_parameters && m_parameters->isValid()) {
+        QJNILocalRef<jobject> listRef = m_parameters->callObjectMethod<jobject>("getFocusAreas",
+                                                                                "()Ljava/util/List;");
+
+        if (!listRef.isNull()) {
+            QJNIObject list(listRef.object());
+            int count = list.callMethod<jint>("size");
+            for (int i = 0; i < count; ++i) {
+                QJNILocalRef<jobject> areaRef = list.callObjectMethod<jobject>("get",
+                                                                               "(I)Ljava/lang/Object;",
+                                                                               i);
+
+                areas.append(areaToRect(areaRef.object()));
+            }
+        }
+    }
+
+    return areas;
+}
+
+void JCamera::setFocusAreas(const QList<QRect> &areas)
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return;
+
+    QJNILocalRef<jobject> list(0);
+
+    if (!areas.isEmpty()) {
+        QAttachedJNIEnv env;
+        QJNIObject arrayList("java/util/ArrayList", "(I)V", areas.size());
+        for (int i = 0; i < areas.size(); ++i) {
+            arrayList.callMethod<jboolean>("add",
+                                           "(Ljava/lang/Object;)Z",
+                                           rectToArea(areas.at(i)).object());
+            if (env->ExceptionCheck())
+                env->ExceptionClear();
+        }
+        list = env->NewLocalRef(arrayList.object());
+    }
+
+    m_parameters->callMethod<void>("setFocusAreas", "(Ljava/util/List;)V", list.object());
+
+    applyParameters();
+}
+
+void JCamera::autoFocus()
+{
+    callMethod<void>("autoFocus");
+    emit autoFocusStarted();
+}
+
+void JCamera::cancelAutoFocus()
+{
+    callMethod<void>("cancelAutoFocus");
+}
+
+bool JCamera::isAutoExposureLockSupported()
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return false;
+
+    return m_parameters->callMethod<jboolean>("isAutoExposureLockSupported");
+}
+
+bool JCamera::getAutoExposureLock()
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return false;
+
+    return m_parameters->callMethod<jboolean>("getAutoExposureLock");
+}
+
+void JCamera::setAutoExposureLock(bool toggle)
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setAutoExposureLock", "(Z)V", toggle);
+    applyParameters();
+}
+
+bool JCamera::isAutoWhiteBalanceLockSupported()
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return false;
+
+    return m_parameters->callMethod<jboolean>("isAutoWhiteBalanceLockSupported");
+}
+
+bool JCamera::getAutoWhiteBalanceLock()
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return false;
+
+    return m_parameters->callMethod<jboolean>("getAutoWhiteBalanceLock");
+}
+
+void JCamera::setAutoWhiteBalanceLock(bool toggle)
+{
+    if (!m_hasAPI14 || !m_parameters || !m_parameters->isValid())
+        return;
+
+    m_parameters->callMethod<void>("setAutoWhiteBalanceLock", "(Z)V", toggle);
     applyParameters();
 }
 
@@ -388,6 +588,8 @@ void JCamera::setWhiteBalance(const QString &value)
                                    "(Ljava/lang/String;)V",
                                    qt_toJString(value).object());
     applyParameters();
+
+    emit whiteBalanceChanged();
 }
 
 void JCamera::setRotation(int rotation)
@@ -488,6 +690,7 @@ QStringList JCamera::callStringListMethod(const char *methodName)
 }
 
 static JNINativeMethod methods[] = {
+    {"notifyAutoFocusComplete", "(IZ)V", (void *)notifyAutoFocusComplete},
     {"notifyPictureExposed", "(I)V", (void *)notifyPictureExposed},
     {"notifyPictureCaptured", "(I[B)V", (void *)notifyPictureCaptured}
 };

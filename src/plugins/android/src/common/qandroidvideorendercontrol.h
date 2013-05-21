@@ -65,16 +65,20 @@ public:
     void setSurface(QAbstractVideoSurface *surface) Q_DECL_OVERRIDE;
 
     jobject surfaceHolder() Q_DECL_OVERRIDE;
+    bool isTextureReady() Q_DECL_OVERRIDE;
+    void setTextureReadyCallback(TextureReadyCallback cb, void *context = 0) Q_DECL_OVERRIDE;
     jobject surfaceTexture() Q_DECL_OVERRIDE;
     void setVideoSize(const QSize &size) Q_DECL_OVERRIDE;
     void stop() Q_DECL_OVERRIDE;
     QImage toImage() Q_DECL_OVERRIDE;
 
+    bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
+
 private Q_SLOTS:
     void onFrameAvailable();
 
 private:
-    void initSurfaceTexture();
+    bool initSurfaceTexture();
     void renderFrameToFbo();
     void createGLResources();
 
@@ -90,6 +94,9 @@ private:
     JSurfaceTexture *m_surfaceTexture;
     JSurfaceTextureHolder *m_surfaceHolder;
     uint m_externalTex;
+
+    TextureReadyCallback m_textureReadyCallback;
+    void *m_textureReadyContext;
 };
 
 QT_END_NAMESPACE

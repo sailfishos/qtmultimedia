@@ -44,6 +44,7 @@
 
 #include <qglobal.h>
 #include <QMediaPlayerControl>
+#include <qsize.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -75,6 +76,7 @@ public:
     void setMedia(const QMediaContent &mediaContent, QIODevice *stream) Q_DECL_OVERRIDE;
 
     void setVideoOutput(QAndroidVideoOutput *videoOutput);
+    void onSurfaceTextureReady();
 
 Q_SIGNALS:
     void metaDataUpdated();
@@ -105,6 +107,7 @@ private:
     int mBufferPercent;
     bool mAudioAvailable;
     bool mVideoAvailable;
+    QSize mVideoSize;
     bool mBuffering;
     QMediaTimeRange mAvailablePlaybackRange;
     bool mMediaPlayerReady;

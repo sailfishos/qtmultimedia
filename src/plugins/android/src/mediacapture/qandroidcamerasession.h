@@ -87,6 +87,8 @@ public:
     int capture(const QString &fileName);
     void cancelCapture();
 
+    void onSurfaceTextureReady();
+
 Q_SIGNALS:
     void statusChanged(QCamera::Status status);
     void stateChanged(QCamera::State);

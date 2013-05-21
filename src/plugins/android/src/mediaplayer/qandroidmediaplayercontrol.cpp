@@ -45,6 +45,12 @@
 
 QT_BEGIN_NAMESPACE
 
+static void textureReadyCallback(void *context)
+{
+    if (context)
+        reinterpret_cast<QAndroidMediaPlayerControl *>(context)->onSurfaceTextureReady();
+}
+
 QAndroidMediaPlayerControl::QAndroidMediaPlayerControl(QObject *parent)
     : QMediaPlayerControl(parent),
       mMediaPlayer(new JMediaPlayer),
@@ -391,17 +397,30 @@ void QAndroidMediaPlayerControl::onBufferChanged(qint32 percent)
 
 void QAndroidMediaPlayerControl::onVideoSizeChanged(qint32 width, qint32 height)
 {
-    if (width == 0 || height == 0)
+    QSize newSize(width, height);
+
+    if (width == 0 || height == 0 || newSize == mVideoSize)
         return;
 
     setVideoAvailable(true);
+    mVideoSize = newSize;
 
     if (mVideoOutput) {
-        if (!mMediaPlayer->display())
-            mMediaPlayer->setDisplay(mVideoOutput->surfaceHolder());
-        if (mMediaPlayer->display())
-            mVideoOutput->setVideoSize(QSize(width, height));
+        if (!mMediaPlayer->display()) {
+            if (mVideoOutput->isTextureReady())
+                mMediaPlayer->setDisplay(mVideoOutput->surfaceHolder());
+            else
+                mVideoOutput->setTextureReadyCallback(textureReadyCallback, this);
+        }
+
+        mVideoOutput->setVideoSize(mVideoSize);
     }
+}
+
+void QAndroidMediaPlayerControl::onSurfaceTextureReady()
+{
+    if (!mMediaPlayer->display() && mVideoOutput)
+        mMediaPlayer->setDisplay(mVideoOutput->surfaceHolder());
 }
 
 void QAndroidMediaPlayerControl::setState(QMediaPlayer::State state)
@@ -463,6 +482,9 @@ void QAndroidMediaPlayerControl::setVideoAvailable(bool available)
 {
     if (mVideoAvailable == available)
         return;
+
+    if (!available)
+        mVideoSize = QSize();
 
     mVideoAvailable = available;
     Q_EMIT videoAvailableChanged(mVideoAvailable);

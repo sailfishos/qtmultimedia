@@ -52,6 +52,12 @@
 
 QT_BEGIN_NAMESPACE
 
+static void textureReadyCallback(void *context)
+{
+    if (context)
+        reinterpret_cast<QAndroidCameraSession *>(context)->onSurfaceTextureReady();
+}
+
 QAndroidCameraSession::QAndroidCameraSession(QObject *parent)
     : QObject(parent)
     , m_selectedCamera(0)
@@ -188,8 +194,12 @@ void QAndroidCameraSession::startPreview()
 
     applyImageSettings();
 
-    if (m_videoOutput)
-        m_camera->setPreviewTexture(m_videoOutput->surfaceTexture());
+    if (m_videoOutput) {
+        if (m_videoOutput->isTextureReady())
+            m_camera->setPreviewTexture(m_videoOutput->surfaceTexture());
+        else
+            m_videoOutput->setTextureReadyCallback(textureReadyCallback, this);
+    }
 
     JMultimediaUtils::enableOrientationListener(true);
 
@@ -481,6 +491,12 @@ void QAndroidCameraSession::processCapturedImage(int id,
                                    tr("Could not load JPEG data from captured image"));
         }
     }
+}
+
+void QAndroidCameraSession::onSurfaceTextureReady()
+{
+    if (m_camera && m_videoOutput)
+        m_camera->setPreviewTexture(m_videoOutput->surfaceTexture());
 }
 
 void QAndroidCameraSession::onActivityPaused()

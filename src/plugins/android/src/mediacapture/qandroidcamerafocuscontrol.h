@@ -67,6 +67,7 @@ public:
 private Q_SLOTS:
     void onCameraOpened();
     void onViewportSizeChanged();
+    void onCameraCaptureModeChanged();
     void onAutoFocusStarted();
     void onAutoFocusComplete(bool success);
 
@@ -76,6 +77,7 @@ private:
 
     QAndroidCameraSession *m_session;
 
+    QCameraFocus::FocusModes m_focusMode;
     QCameraFocus::FocusPointMode m_focusPointMode;
     QPointF m_actualFocusPoint;
     QPointF m_customFocusPoint;

@@ -39,20 +39,31 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#ifndef QANDROIDAUDIOENCODERSETTINGSCONTROL_H
+#define QANDROIDAUDIOENCODERSETTINGSCONTROL_H
 
-#include <qglobal.h>
-#include <qsize.h>
+#include <qaudioencodersettingscontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+class QAndroidCaptureSession;
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+class QAndroidAudioEncoderSettingsControl : public QAudioEncoderSettingsControl
+{
+    Q_OBJECT
+public:
+    explicit QAndroidAudioEncoderSettingsControl(QAndroidCaptureSession *session);
+
+    QStringList supportedAudioCodecs() const Q_DECL_OVERRIDE;
+    QString codecDescription(const QString &codecName) const Q_DECL_OVERRIDE;
+    QList<int> supportedSampleRates(const QAudioEncoderSettings &settings, bool *continuous = 0) const Q_DECL_OVERRIDE;
+    QAudioEncoderSettings audioSettings() const Q_DECL_OVERRIDE;
+    void setAudioSettings(const QAudioEncoderSettings &settings) Q_DECL_OVERRIDE;
+
+private:
+    QAndroidCaptureSession *m_session;
+};
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMULTIMEDIAUTILS_H
+#endif // QANDROIDAUDIOENCODERSETTINGSCONTROL_H

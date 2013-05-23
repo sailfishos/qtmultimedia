@@ -49,15 +49,11 @@ QAndroidMediaStorageLocation::QAndroidMediaStorageLocation()
 {
 }
 
-QDir QAndroidMediaStorageLocation::defaultDir(QCamera::CaptureMode mode) const
+QDir QAndroidMediaStorageLocation::defaultDir(QCamera::CaptureMode) const
 {
     QStringList dirCandidates;
 
-    if (mode == QCamera::CaptureVideo)
-        dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::Movies);
-    else
-        dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM);
-
+    dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM);
     dirCandidates << QDir::homePath();
     dirCandidates << QDir::currentPath();
     dirCandidates << QDir::tempPath();

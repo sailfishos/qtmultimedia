@@ -71,4 +71,9 @@ int qt_findClosestValue(const QList<int> &list, int value)
     return value - v >= list.at(pivot + 1) - value ? pivot + 1 : pivot;
 }
 
+bool qt_sizeLessThan(const QSize &s1, const QSize &s2)
+{
+    return s1.width() * s1.height() < s2.width() * s2.height();
+}
+
 QT_END_NAMESPACE

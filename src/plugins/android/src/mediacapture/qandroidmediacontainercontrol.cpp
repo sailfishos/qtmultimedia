@@ -39,20 +39,48 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#include "qandroidmediacontainercontrol.h"
 
-#include <qglobal.h>
-#include <qsize.h>
+#include "qandroidcapturesession.h"
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+QAndroidMediaContainerControl::QAndroidMediaContainerControl(QAndroidCaptureSession *session)
+    : QMediaContainerControl()
+    , m_session(session)
+{
+}
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+QStringList QAndroidMediaContainerControl::supportedContainers() const
+{
+    return QStringList() << QLatin1String("mp4")
+                         << QLatin1String("3gp")
+                         << QLatin1String("amr")
+                         << QLatin1String("awb");
+}
+
+QString QAndroidMediaContainerControl::containerFormat() const
+{
+    return m_session->containerFormat();
+}
+
+void QAndroidMediaContainerControl::setContainerFormat(const QString &format)
+{
+    m_session->setContainerFormat(format);
+}
+
+QString QAndroidMediaContainerControl::containerDescription(const QString &formatMimeType) const
+{
+    if (formatMimeType == QLatin1String("mp4"))
+        return tr("MPEG4 media file format");
+    else if (formatMimeType == QLatin1String("3gp"))
+        return tr("3GPP media file format");
+    else if (formatMimeType == QLatin1String("amr"))
+        return tr("AMR NB file format");
+    else if (formatMimeType == QLatin1String("awb"))
+        return tr("AMR WB file format");
+
+    return QString();
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDMULTIMEDIAUTILS_H

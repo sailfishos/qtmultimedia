@@ -44,16 +44,12 @@
 #include <QtPlatformSupport/private/qjnihelpers_p.h>
 #include <qstringlist.h>
 #include <qdebug.h>
+#include "qandroidmultimediautils.h"
 
 QT_BEGIN_NAMESPACE
 
 static jclass g_qtCameraClass = 0;
 static QMap<int, JCamera*> g_objectMap;
-
-static bool sizeLessThan(const QSize &s1, const QSize &s2)
-{
-    return s1.width() * s1.height() < s2.width() * s2.height();
-}
 
 static QRect areaToRect(jobject areaObj)
 {
@@ -232,7 +228,7 @@ QList<QSize> JCamera::getSupportedPreviewSizes()
             list.append(QSize(size.getField<jint>("width"), size.getField<jint>("height")));
         }
 
-        qSort(list.begin(), list.end(), sizeLessThan);
+        qSort(list.begin(), list.end(), qt_sizeLessThan);
     }
 
     return list;
@@ -618,7 +614,7 @@ QList<QSize> JCamera::getSupportedPictureSizes()
             list.append(QSize(size.getField<jint>("width"), size.getField<jint>("height")));
         }
 
-        qSort(list.begin(), list.end(), sizeLessThan);
+        qSort(list.begin(), list.end(), qt_sizeLessThan);
     }
 
     return list;

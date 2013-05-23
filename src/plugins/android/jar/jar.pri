@@ -10,7 +10,8 @@ JAVASOURCES += $$PWD/src/org/qtproject/qt5/android/multimedia/QtAndroidMediaPlay
                $$PWD/src/org/qtproject/qt5/android/multimedia/QtActivityStateListener.java \
                $$PWD/src/org/qtproject/qt5/android/multimedia/QtSurfaceTexture.java \
                $$PWD/src/org/qtproject/qt5/android/multimedia/QtSurfaceTextureHolder.java \
-               $$PWD/src/org/qtproject/qt5/android/multimedia/QtMultimediaUtils.java
+               $$PWD/src/org/qtproject/qt5/android/multimedia/QtMultimediaUtils.java \
+               $$PWD/src/org/qtproject/qt5/android/multimedia/QtMediaRecorder.java
 
 # install
 target.path = $$[QT_INSTALL_PREFIX]/jar

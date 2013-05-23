@@ -61,6 +61,7 @@ static QRect adjustedArea(const QRectF &area)
 QAndroidCameraFocusControl::QAndroidCameraFocusControl(QAndroidCameraSession *session)
     : QCameraFocusControl()
     , m_session(session)
+    , m_focusMode(QCameraFocus::AutoFocus)
     , m_focusPointMode(QCameraFocus::FocusPointAuto)
     , m_actualFocusPoint(0.5, 0.5)
     , m_continuousPictureFocusSupported(false)
@@ -68,33 +69,18 @@ QAndroidCameraFocusControl::QAndroidCameraFocusControl(QAndroidCameraSession *se
 {
     connect(m_session, SIGNAL(opened()),
             this, SLOT(onCameraOpened()));
+    connect(m_session, SIGNAL(captureModeChanged(QCamera::CaptureModes)),
+            this, SLOT(onCameraCaptureModeChanged()));
 }
 
 QCameraFocus::FocusModes QAndroidCameraFocusControl::focusMode() const
 {
-    if (!m_session->camera())
-        return QCameraFocus::FocusModes();
-
-    QString focusMode = m_session->camera()->getFocusMode();
-    if (focusMode == QLatin1String("auto"))
-        return QCameraFocus::AutoFocus;
-    else if (focusMode == QLatin1String("fixed"))
-        return QCameraFocus::ManualFocus;
-    else if (focusMode == QLatin1String("continuous-video") || focusMode == QLatin1String("continuous-picture"))
-        return QCameraFocus::ContinuousFocus;
-    else if (focusMode == QLatin1String("edof"))
-        return QCameraFocus::HyperfocalFocus;
-    else if (focusMode == QLatin1String("macro"))
-        return QCameraFocus::MacroFocus;
-    else if (focusMode == QLatin1String("infinity"))
-        return QCameraFocus::InfinityFocus;
-
-    return QCameraFocus::FocusModes();
+    return m_focusMode;
 }
 
 void QAndroidCameraFocusControl::setFocusMode(QCameraFocus::FocusModes mode)
 {
-    if (focusMode() == mode || !m_session->camera() || !isFocusModeSupported(mode))
+    if (m_focusMode == mode || !m_session->camera() || !isFocusModeSupported(mode))
         return;
 
     QString focusMode = QLatin1String("fixed");
@@ -123,7 +109,8 @@ void QAndroidCameraFocusControl::setFocusMode(QCameraFocus::FocusModes mode)
     // reset focus position
     m_session->camera()->cancelAutoFocus();
 
-    emit focusModeChanged(mode);
+    m_focusMode = mode;
+    emit focusModeChanged(m_focusMode);
 }
 
 bool QAndroidCameraFocusControl::isFocusModeSupported(QCameraFocus::FocusModes mode) const
@@ -286,6 +273,21 @@ void QAndroidCameraFocusControl::onViewportSizeChanged()
     if (!m_focusZones.isEmpty())
         status = m_focusZones.at(0).status();
     updateFocusZones(status);
+}
+
+void QAndroidCameraFocusControl::onCameraCaptureModeChanged()
+{
+    if (m_focusMode == QCameraFocus::ContinuousFocus) {
+        QString focusMode;
+        if ((m_session->captureMode().testFlag(QCamera::CaptureVideo) && m_continuousVideoFocusSupported)
+                || !m_continuousPictureFocusSupported) {
+            focusMode = QLatin1String("continuous-video");
+        } else {
+            focusMode = QLatin1String("continuous-picture");
+        }
+        m_session->camera()->setFocusMode(focusMode);
+        m_session->camera()->cancelAutoFocus();
+    }
 }
 
 void QAndroidCameraFocusControl::onAutoFocusStarted()

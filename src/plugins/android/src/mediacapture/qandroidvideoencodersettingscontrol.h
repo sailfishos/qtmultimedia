@@ -39,20 +39,32 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#ifndef QANDROIDVIDEOENCODERSETTINGSCONTROL_H
+#define QANDROIDVIDEOENCODERSETTINGSCONTROL_H
 
-#include <qglobal.h>
-#include <qsize.h>
+#include <qvideoencodersettingscontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+class QAndroidCaptureSession;
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+class QAndroidVideoEncoderSettingsControl : public QVideoEncoderSettingsControl
+{
+    Q_OBJECT
+public:
+    explicit QAndroidVideoEncoderSettingsControl(QAndroidCaptureSession *session);
+
+    QList<QSize> supportedResolutions(const QVideoEncoderSettings &settings, bool *continuous = 0) const Q_DECL_OVERRIDE;
+    QList<qreal> supportedFrameRates(const QVideoEncoderSettings &settings, bool *continuous = 0) const Q_DECL_OVERRIDE;
+    QStringList supportedVideoCodecs() const Q_DECL_OVERRIDE;
+    QString videoCodecDescription(const QString &codecName) const Q_DECL_OVERRIDE;
+    QVideoEncoderSettings videoSettings() const Q_DECL_OVERRIDE;
+    void setVideoSettings(const QVideoEncoderSettings &settings) Q_DECL_OVERRIDE;
+
+private:
+    QAndroidCaptureSession *m_session;
+};
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMULTIMEDIAUTILS_H
+#endif // QANDROIDVIDEOENCODERSETTINGSCONTROL_H

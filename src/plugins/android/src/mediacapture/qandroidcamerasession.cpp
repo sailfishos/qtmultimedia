@@ -69,6 +69,7 @@ QAndroidCameraSession::QAndroidCameraSession(QObject *parent)
     , m_savedState(-1)
     , m_status(QCamera::UnloadedStatus)
     , m_previewStarted(false)
+    , m_imageSettingsDirty(true)
     , m_captureDestination(QCameraImageCapture::CaptureToFile)
     , m_captureImageDriveMode(QCameraImageCapture::SingleImageCapture)
     , m_lastImageCaptureId(0)
@@ -93,15 +94,18 @@ void QAndroidCameraSession::setCaptureMode(QCamera::CaptureModes mode)
         return;
 
     m_captureMode = mode;
+    emit captureModeChanged(m_captureMode);
 
-    emit captureModeChanged(mode);
+    if (m_previewStarted && m_captureMode.testFlag(QCamera::CaptureStillImage))
+        adjustViewfinderSize(m_imageSettings.resolution());
 }
 
 bool QAndroidCameraSession::isCaptureModeSupported(QCamera::CaptureModes mode) const
 {
-    return mode == QCamera::CaptureViewfinder
-            || mode == (QCamera::CaptureViewfinder & QCamera::CaptureStillImage)
-            || mode == (QCamera::CaptureViewfinder & QCamera::CaptureVideo);
+    if (mode & (QCamera::CaptureStillImage & QCamera::CaptureVideo))
+        return false;
+
+    return true;
 }
 
 void QAndroidCameraSession::setState(QCamera::State state)
@@ -167,6 +171,7 @@ void QAndroidCameraSession::close()
     m_readyForCapture = false;
     m_currentImageCaptureId = -1;
     m_currentImageCaptureFileName.clear();
+    m_imageSettingsDirty = true;
 
     m_camera->release();
     delete m_camera;
@@ -184,6 +189,42 @@ void QAndroidCameraSession::setVideoPreview(QAndroidVideoOutput *videoOutput)
     m_videoOutput = videoOutput;
 }
 
+void QAndroidCameraSession::adjustViewfinderSize(const QSize &captureSize, bool restartPreview)
+{
+    if (!m_camera)
+        return;
+
+    QSize viewfinderResolution = m_camera->previewSize();
+    const qreal aspectRatio = qreal(captureSize.width()) / qreal(captureSize.height());
+    if (qFuzzyCompare(aspectRatio, qreal(viewfinderResolution.width()) / qreal(viewfinderResolution.height())))
+        return;
+
+    QList<QSize> previewSizes = m_camera->getSupportedPreviewSizes();
+    for (int i = previewSizes.count() - 1; i >= 0; --i) {
+        const QSize &size = previewSizes.at(i);
+        // search for viewfinder resolution with the same aspect ratio
+        if (qFuzzyCompare(aspectRatio, (static_cast<qreal>(size.width())/static_cast<qreal>(size.height())))) {
+            viewfinderResolution = size;
+            break;
+        }
+    }
+
+    if (m_camera->previewSize() != viewfinderResolution) {
+        if (m_videoOutput)
+            m_videoOutput->setVideoSize(viewfinderResolution);
+
+        // if preview is started, we have to stop it first before changing its size
+        if (m_previewStarted && restartPreview)
+            m_camera->stopPreview();
+
+        m_camera->setPreviewSize(viewfinderResolution);
+
+        // restart preview
+        if (m_previewStarted && restartPreview)
+            m_camera->startPreview();
+    }
+}
+
 void QAndroidCameraSession::startPreview()
 {
     if (!m_camera || m_previewStarted)
@@ -193,6 +234,7 @@ void QAndroidCameraSession::startPreview()
     emit statusChanged(m_status);
 
     applyImageSettings();
+    adjustViewfinderSize(m_imageSettings.resolution());
 
     if (m_videoOutput) {
         if (m_videoOutput->isTextureReady())
@@ -242,7 +284,12 @@ void QAndroidCameraSession::setImageSettings(const QImageEncoderSettings &settin
     if (m_imageSettings.codec().isEmpty())
         m_imageSettings.setCodec(QLatin1String("jpeg"));
 
+    m_imageSettingsDirty = true;
+
     applyImageSettings();
+
+    if (m_readyForCapture && m_captureMode.testFlag(QCamera::CaptureStillImage))
+        adjustViewfinderSize(m_imageSettings.resolution());
 }
 
 int QAndroidCameraSession::currentCameraRotation() const
@@ -263,7 +310,7 @@ int QAndroidCameraSession::currentCameraRotation() const
 
 void QAndroidCameraSession::applyImageSettings()
 {
-    if (!m_camera)
+    if (!m_camera || !m_imageSettingsDirty)
         return;
 
     const QSize requestedResolution = m_imageSettings.resolution();
@@ -282,36 +329,6 @@ void QAndroidCameraSession::applyImageSettings()
         }
         int closestIndex = qt_findClosestValue(supportedPixelCounts, reqPixelCount);
         m_imageSettings.setResolution(supportedResolutions.at(closestIndex));
-    }
-
-    const QSize photoResolution = m_imageSettings.resolution();
-    const qreal aspectRatio = static_cast<qreal>(photoResolution.width())/static_cast<qreal>(photoResolution.height());
-
-    // apply viewfinder configuration
-    QSize viewfinderResolution;
-    QList<QSize> previewSizes = m_camera->getSupportedPreviewSizes();
-    for (int i = previewSizes.count() - 1; i >= 0; --i) {
-        const QSize &size = previewSizes.at(i);
-        // search for viewfinder resolution with the same aspect ratio
-        if (qFuzzyCompare(aspectRatio, (static_cast<qreal>(size.width())/static_cast<qreal>(size.height())))) {
-            viewfinderResolution = size;
-            break;
-        }
-    }
-
-    if (m_camera->previewSize() != viewfinderResolution) {
-        if (m_videoOutput)
-            m_videoOutput->setVideoSize(viewfinderResolution);
-
-        // if preview is started, we have to stop it first before changing its size
-        if (m_previewStarted)
-            m_camera->stopPreview();
-
-        m_camera->setPreviewSize(viewfinderResolution);
-
-        // restart preview
-        if (m_previewStarted)
-            m_camera->startPreview();
     }
 
     int jpegQuality = 100;
@@ -333,8 +350,10 @@ void QAndroidCameraSession::applyImageSettings()
         break;
     }
 
-    m_camera->setPictureSize(photoResolution);
+    m_camera->setPictureSize(m_imageSettings.resolution());
     m_camera->setJpegQuality(jpegQuality);
+
+    m_imageSettingsDirty = false;
 }
 
 bool QAndroidCameraSession::isCaptureDestinationSupported(QCameraImageCapture::CaptureDestinations destination) const
@@ -394,6 +413,9 @@ int QAndroidCameraSession::capture(const QString &fileName)
 
         m_currentImageCaptureId = m_lastImageCaptureId;
         m_currentImageCaptureFileName = fileName;
+
+        applyImageSettings();
+        adjustViewfinderSize(m_imageSettings.resolution());
 
         // adjust picture rotation depending on the device orientation
         m_camera->setRotation(currentCameraRotation());

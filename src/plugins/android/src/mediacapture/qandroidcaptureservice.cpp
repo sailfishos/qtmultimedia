@@ -41,6 +41,8 @@
 
 #include "qandroidcaptureservice.h"
 
+#include "qandroidmediarecordercontrol.h"
+#include "qandroidcapturesession.h"
 #include "qandroidcameracontrol.h"
 #include "qandroidvideodeviceselectorcontrol.h"
 #include "qandroidcamerasession.h"
@@ -55,6 +57,9 @@
 #include "qandroidcameraimagecapturecontrol.h"
 #include "qandroidcameracapturedestinationcontrol.h"
 #include "qandroidcameracapturebufferformatcontrol.h"
+#include "qandroidaudioencodersettingscontrol.h"
+#include "qandroidvideoencodersettingscontrol.h"
+#include "qandroidmediacontainercontrol.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -75,13 +80,23 @@ QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
     m_imageCaptureControl = new QAndroidCameraImageCaptureControl(m_cameraSession);
     m_captureDestinationControl = new QAndroidCameraCaptureDestinationControl(m_cameraSession);
     m_captureBufferFormatControl = new QAndroidCameraCaptureBufferFormatControl;
+
+    m_captureSession = new QAndroidCaptureSession(m_cameraSession);
+    m_recorderControl = new QAndroidMediaRecorderControl(m_captureSession);
+    m_audioEncoderSettingsControl = new QAndroidAudioEncoderSettingsControl(m_captureSession);
+    m_videoEncoderSettingsControl = new QAndroidVideoEncoderSettingsControl(m_captureSession);
+    m_mediaContainerControl = new QAndroidMediaContainerControl(m_captureSession);
 }
 
 QAndroidCaptureService::~QAndroidCaptureService()
 {
+    delete m_audioEncoderSettingsControl;
+    delete m_videoEncoderSettingsControl;
+    delete m_mediaContainerControl;
+    delete m_recorderControl;
+    delete m_captureSession;
     delete m_cameraControl;
     delete m_videoInputControl;
-    delete m_cameraSession;
     delete m_videoRendererControl;
     delete m_cameraZoomControl;
     delete m_cameraExposureControl;
@@ -93,10 +108,23 @@ QAndroidCaptureService::~QAndroidCaptureService()
     delete m_imageCaptureControl;
     delete m_captureDestinationControl;
     delete m_captureBufferFormatControl;
+    delete m_cameraSession;
 }
 
 QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 {
+    if (qstrcmp(name, QMediaRecorderControl_iid) == 0)
+        return m_recorderControl;
+
+    if (qstrcmp(name, QMediaContainerControl_iid) == 0)
+        return m_mediaContainerControl;
+
+    if (qstrcmp(name, QAudioEncoderSettingsControl_iid) == 0)
+        return m_audioEncoderSettingsControl;
+
+    if (qstrcmp(name, QVideoEncoderSettingsControl_iid) == 0)
+        return m_videoEncoderSettingsControl;
+
     if (qstrcmp(name, QCameraControl_iid) == 0)
         return m_cameraControl;
 

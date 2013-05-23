@@ -291,6 +291,8 @@ void QAndroidVideoRendererControl::setVideoSize(const QSize &size)
     if (m_nativeSize == size)
         return;
 
+    stop();
+
     m_nativeSize = size;
 
     delete m_fbo;

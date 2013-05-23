@@ -73,6 +73,7 @@ public:
     bool isCaptureModeSupported(QCamera::CaptureModes mode) const;
 
     void setVideoPreview(QAndroidVideoOutput *videoOutput);
+    void adjustViewfinderSize(const QSize &captureSize, bool restartPreview = true);
 
     QImageEncoderSettings imageSettings() const { return m_imageSettings; }
     void setImageSettings(const QImageEncoderSettings &settings);
@@ -82,12 +83,15 @@ public:
     void setCaptureDestination(QCameraImageCapture::CaptureDestinations destination);
 
     bool isReadyForCapture() const;
+    void setReadyForCapture(bool ready);
     QCameraImageCapture::DriveMode driveMode() const;
     void setDriveMode(QCameraImageCapture::DriveMode mode);
     int capture(const QString &fileName);
     void cancelCapture();
 
     void onSurfaceTextureReady();
+
+    int currentCameraRotation() const;
 
 Q_SIGNALS:
     void statusChanged(QCamera::Status status);
@@ -117,12 +121,8 @@ private:
     bool open();
     void close();
 
-    void setReadyForCapture(bool ready);
-
     void startPreview();
     void stopPreview();
-
-    int currentCameraRotation() const;
 
     void applyImageSettings();
     void processPreviewImage(int id);
@@ -145,6 +145,7 @@ private:
     bool m_previewStarted;
 
     QImageEncoderSettings m_imageSettings;
+    bool m_imageSettingsDirty;
     QCameraImageCapture::CaptureDestinations m_captureDestination;
     QCameraImageCapture::DriveMode m_captureImageDriveMode;
     int m_lastImageCaptureId;

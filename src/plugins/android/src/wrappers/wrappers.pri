@@ -9,7 +9,8 @@ HEADERS += \
     $$PWD/jmediametadataretriever.h \
     $$PWD/jcamera.h \
     $$PWD/jactivitystatelistener.h \
-    $$PWD/jmultimediautils.h
+    $$PWD/jmultimediautils.h \
+    $$PWD/jmediarecorder.h
 
 SOURCES += \
     $$PWD/jmediaplayer.cpp \
@@ -18,4 +19,5 @@ SOURCES += \
     $$PWD/jmediametadataretriever.cpp \
     $$PWD/jcamera.cpp \
     $$PWD/jactivitystatelistener.cpp \
-    $$PWD/jmultimediautils.cpp
+    $$PWD/jmultimediautils.cpp \
+    $$PWD/jmediarecorder.cpp

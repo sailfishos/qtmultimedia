@@ -62,6 +62,8 @@ public:
 
     static JCamera *open(int cameraId);
 
+    int cameraId() const { return m_cameraId; }
+
     void lock();
     void unlock();
     void reconnect();

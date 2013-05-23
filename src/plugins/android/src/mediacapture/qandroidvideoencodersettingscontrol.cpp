@@ -39,20 +39,61 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#include "qandroidvideoencodersettingscontrol.h"
 
-#include <qglobal.h>
-#include <qsize.h>
+#include "qandroidcapturesession.h"
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+QAndroidVideoEncoderSettingsControl::QAndroidVideoEncoderSettingsControl(QAndroidCaptureSession *session)
+    : QVideoEncoderSettingsControl()
+    , m_session(session)
+{
+}
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+QList<QSize> QAndroidVideoEncoderSettingsControl::supportedResolutions(const QVideoEncoderSettings &, bool *continuous) const
+{
+    if (continuous)
+        *continuous = false;
+
+    return m_session->supportedResolutions();
+}
+
+QList<qreal> QAndroidVideoEncoderSettingsControl::supportedFrameRates(const QVideoEncoderSettings &, bool *continuous) const
+{
+    if (continuous)
+        *continuous = false;
+
+    return m_session->supportedFrameRates();
+}
+
+QStringList QAndroidVideoEncoderSettingsControl::supportedVideoCodecs() const
+{
+    return QStringList() << QLatin1String("h263")
+                         << QLatin1String("h264")
+                         << QLatin1String("mpeg4_sp");
+}
+
+QString QAndroidVideoEncoderSettingsControl::videoCodecDescription(const QString &codecName) const
+{
+    if (codecName == QLatin1String("h263"))
+        return tr("H.263 compression");
+    else if (codecName == QLatin1String("h264"))
+        return tr("H.264 compression");
+    else if (codecName == QLatin1String("mpeg4_sp"))
+        return tr("MPEG-4 SP compression");
+
+    return QString();
+}
+
+QVideoEncoderSettings QAndroidVideoEncoderSettingsControl::videoSettings() const
+{
+    return m_session->videoSettings();
+}
+
+void QAndroidVideoEncoderSettingsControl::setVideoSettings(const QVideoEncoderSettings &settings)
+{
+    m_session->setVideoSettings(settings);
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDMULTIMEDIAUTILS_H

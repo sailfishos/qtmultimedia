@@ -47,6 +47,8 @@
 
 QT_BEGIN_NAMESPACE
 
+class QAndroidMediaRecorderControl;
+class QAndroidCaptureSession;
 class QAndroidCameraControl;
 class QAndroidVideoDeviceSelectorControl;
 class QAndroidCameraSession;
@@ -61,6 +63,9 @@ class QAndroidImageEncoderControl;
 class QAndroidCameraImageCaptureControl;
 class QAndroidCameraCaptureDestinationControl;
 class QAndroidCameraCaptureBufferFormatControl;
+class QAndroidAudioEncoderSettingsControl;
+class QAndroidVideoEncoderSettingsControl;
+class QAndroidMediaContainerControl;
 
 class QAndroidCaptureService : public QMediaService
 {
@@ -74,6 +79,8 @@ public:
     void releaseControl(QMediaControl *);
 
 private:
+    QAndroidMediaRecorderControl *m_recorderControl;
+    QAndroidCaptureSession *m_captureSession;
     QAndroidCameraControl *m_cameraControl;
     QAndroidVideoDeviceSelectorControl *m_videoInputControl;
     QAndroidCameraSession *m_cameraSession;
@@ -88,6 +95,9 @@ private:
     QAndroidCameraImageCaptureControl *m_imageCaptureControl;
     QAndroidCameraCaptureDestinationControl *m_captureDestinationControl;
     QAndroidCameraCaptureBufferFormatControl *m_captureBufferFormatControl;
+    QAndroidAudioEncoderSettingsControl *m_audioEncoderSettingsControl;
+    QAndroidVideoEncoderSettingsControl *m_videoEncoderSettingsControl;
+    QAndroidMediaContainerControl *m_mediaContainerControl;
 };
 
 QT_END_NAMESPACE

@@ -50,6 +50,7 @@
 #include "jcamera.h"
 #include "jactivitystatelistener.h"
 #include "jmultimediautils.h"
+#include "jmediarecorder.h"
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -127,7 +128,8 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void * /*reserved*/)
         !JSurfaceTextureHolder::initJNI(jniEnv) ||
         !JCamera::initJNI(jniEnv) ||
         !JActivityStateListener::initJNI(jniEnv) ||
-        !JMultimediaUtils::initJNI(jniEnv)) {
+        !JMultimediaUtils::initJNI(jniEnv) ||
+        !JMediaRecorder::initJNI(jniEnv)) {
         return JNI_ERR;
     }
 

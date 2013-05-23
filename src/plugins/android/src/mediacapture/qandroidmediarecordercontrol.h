@@ -39,20 +39,39 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#ifndef QANDROIDMEDIARECORDERCONTROL_H
+#define QANDROIDMEDIARECORDERCONTROL_H
 
-#include <qglobal.h>
-#include <qsize.h>
+#include <qmediarecordercontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+class QAndroidCaptureSession;
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+class QAndroidMediaRecorderControl : public QMediaRecorderControl
+{
+    Q_OBJECT
+public:
+    explicit QAndroidMediaRecorderControl(QAndroidCaptureSession *session);
+
+    QUrl outputLocation() const Q_DECL_OVERRIDE;
+    bool setOutputLocation(const QUrl &location) Q_DECL_OVERRIDE;
+    QMediaRecorder::State state() const Q_DECL_OVERRIDE;
+    QMediaRecorder::Status status() const Q_DECL_OVERRIDE;
+    qint64 duration() const Q_DECL_OVERRIDE;
+    bool isMuted() const Q_DECL_OVERRIDE;
+    qreal volume() const Q_DECL_OVERRIDE;
+    void applySettings() Q_DECL_OVERRIDE;
+
+public Q_SLOTS:
+    void setState(QMediaRecorder::State state) Q_DECL_OVERRIDE;
+    void setMuted(bool muted) Q_DECL_OVERRIDE;
+    void setVolume(qreal volume) Q_DECL_OVERRIDE;
+
+private:
+    QAndroidCaptureSession *m_session;
+};
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMULTIMEDIAUTILS_H
+#endif // QANDROIDMEDIARECORDERCONTROL_H

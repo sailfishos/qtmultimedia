@@ -39,20 +39,96 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#ifndef JMEDIARECORDER_H
+#define JMEDIARECORDER_H
 
-#include <qglobal.h>
+#include <qobject.h>
+#include <QtPlatformSupport/private/qjniobject_p.h>
 #include <qsize.h>
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+class JCamera;
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+class JMediaRecorder : public QObject, public QJNIObject
+{
+    Q_OBJECT
+public:
+    enum AudioEncoder {
+        DefaultAudioEncoder = 0,
+        AMR_NB_Encoder = 1,
+        AMR_WB_Encoder = 2,
+        AAC = 3
+    };
+
+    enum AudioSource {
+        DefaultAudioSource = 0,
+        Mic = 1,
+        VoiceUplink = 2,
+        VoiceDownlink = 3,
+        VoiceCall = 4,
+        Camcorder = 5,
+        VoiceRecognition = 6
+    };
+
+    enum VideoEncoder {
+        DefaultVideoEncoder = 0,
+        H263 = 1,
+        H264 = 2,
+        MPEG_4_SP = 3
+    };
+
+    enum VideoSource {
+        DefaultVideoSource = 0,
+        Camera = 1
+    };
+
+    enum OutputFormat {
+        DefaultOutputFormat = 0,
+        THREE_GPP = 1,
+        MPEG_4 = 2,
+        AMR_NB_Format = 3,
+        AMR_WB_Format = 4
+    };
+
+    JMediaRecorder();
+    ~JMediaRecorder();
+
+    void release();
+    bool prepare();
+    void reset();
+
+    bool start();
+    void stop();
+
+    void setAudioChannels(int numChannels);
+    void setAudioEncoder(AudioEncoder encoder);
+    void setAudioEncodingBitRate(int bitRate);
+    void setAudioSamplingRate(int samplingRate);
+    void setAudioSource(AudioSource source);
+
+    void setCamera(JCamera *camera);
+    void setVideoEncoder(VideoEncoder encoder);
+    void setVideoEncodingBitRate(int bitRate);
+    void setVideoFrameRate(int rate);
+    void setVideoSize(const QSize &size);
+    void setVideoSource(VideoSource source);
+
+    void setOrientationHint(int degrees);
+
+    void setOutputFormat(OutputFormat format);
+    void setOutputFile(const QString &path);
+
+    static bool initJNI(JNIEnv *env);
+
+Q_SIGNALS:
+    void error(int what, int extra);
+    void info(int what, int extra);
+
+private:
+    jlong m_id;
+};
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMULTIMEDIAUTILS_H
+#endif // JMEDIARECORDER_H

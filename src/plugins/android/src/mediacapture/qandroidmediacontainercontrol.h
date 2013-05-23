@@ -39,20 +39,30 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#ifndef QANDROIDMEDIACONTAINERCONTROL_H
+#define QANDROIDMEDIACONTAINERCONTROL_H
 
-#include <qglobal.h>
-#include <qsize.h>
+#include <qmediacontainercontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+class QAndroidCaptureSession;
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+class QAndroidMediaContainerControl : public QMediaContainerControl
+{
+    Q_OBJECT
+public:
+    QAndroidMediaContainerControl(QAndroidCaptureSession *session);
+
+    QStringList supportedContainers() const Q_DECL_OVERRIDE;
+    QString containerFormat() const Q_DECL_OVERRIDE;
+    void setContainerFormat(const QString &format) Q_DECL_OVERRIDE;
+    QString containerDescription(const QString &formatMimeType) const Q_DECL_OVERRIDE;
+
+private:
+    QAndroidCaptureSession *m_session;
+};
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMULTIMEDIAUTILS_H
+#endif // QANDROIDMEDIACONTAINERCONTROL_H

@@ -39,20 +39,60 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMULTIMEDIAUTILS_H
-#define QANDROIDMULTIMEDIAUTILS_H
+#include "qandroidaudioencodersettingscontrol.h"
 
-#include <qglobal.h>
-#include <qsize.h>
+#include "qandroidcapturesession.h"
 
 QT_BEGIN_NAMESPACE
 
-// return the index of the closest value to <value> in <list>
-// (binary search)
-int qt_findClosestValue(const QList<int> &list, int value);
+QAndroidAudioEncoderSettingsControl::QAndroidAudioEncoderSettingsControl(QAndroidCaptureSession *session)
+    : QAudioEncoderSettingsControl()
+    , m_session(session)
+{
+}
 
-bool qt_sizeLessThan(const QSize &s1, const QSize &s2);
+QStringList QAndroidAudioEncoderSettingsControl::supportedAudioCodecs() const
+{
+    return QStringList() << QLatin1String("amr-nb") << QLatin1String("amr-wb") << QLatin1String("aac");
+}
+
+QString QAndroidAudioEncoderSettingsControl::codecDescription(const QString &codecName) const
+{
+    if (codecName == QLatin1String("amr-nb"))
+        return tr("Adaptive Multi-Rate Narrowband (AMR-NB) audio codec");
+    else if (codecName == QLatin1String("amr-wb"))
+        return tr("Adaptive Multi-Rate Wideband (AMR-WB) audio codec");
+    else if (codecName == QLatin1String("aac"))
+        return tr("AAC Low Complexity (AAC-LC) audio codec");
+
+    return QString();
+}
+
+QList<int> QAndroidAudioEncoderSettingsControl::supportedSampleRates(const QAudioEncoderSettings &settings, bool *continuous) const
+{
+    if (continuous)
+        *continuous = false;
+
+    if (settings.isNull() || settings.codec().isNull() || settings.codec() == QLatin1String("aac")) {
+        return QList<int>() << 8000 << 11025 << 12000 << 16000 << 22050
+                            << 24000 << 32000 << 44100 << 48000 << 96000;
+    } else if (settings.codec() == QLatin1String("amr-nb")) {
+        return QList<int>() << 8000;
+    } else if (settings.codec() == QLatin1String("amr-wb")) {
+        return QList<int>() << 16000;
+    }
+
+    return QList<int>();
+}
+
+QAudioEncoderSettings QAndroidAudioEncoderSettingsControl::audioSettings() const
+{
+    return m_session->audioSettings();
+}
+
+void QAndroidAudioEncoderSettingsControl::setAudioSettings(const QAudioEncoderSettings &settings)
+{
+    m_session->setAudioSettings(settings);
+}
 
 QT_END_NAMESPACE
-
-#endif // QANDROIDMULTIMEDIAUTILS_H

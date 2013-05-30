@@ -18,6 +18,14 @@ BuildRequires:  qt5-qtdeclarative-qtquick-devel
 BuildRequires:  qt5-qmake
 BuildRequires:  pkgconfig(alsa)
 BuildRequires:  fdupes
+BuildRequires:  pkgconfig(gstreamer-0.10)
+BuildRequires:  pkgconfig(gstreamer-base-0.10)
+BuildRequires:  pkgconfig(gstreamer-interfaces-0.10)
+BuildRequires:  pkgconfig(gstreamer-audio-0.10)
+BuildRequires:  pkgconfig(gstreamer-video-0.10)
+BuildRequires:  pkgconfig(gstreamer-pbutils-0.10)
+BuildRequires:  pkgconfig(gstreamer-app-0.10)
+BuildRequires:  pkgconfig(gstreamer-plugins-bad-free-0.10)
 
 %description
 Qt is a cross-platform application and UI framework. Using Qt, you can
@@ -48,18 +56,57 @@ Requires:   qt5-qtdeclarative
 %description -n qt5-qtdeclarative-import-multimedia
 This package contains the Multimedia import for QtQml
 
-%package plugin-mediaservice-audioengine
-Summary:    Qt Multimedia - audio engine media-service
+%package gsttools
+Summary:    Qt Multimedia - Utility library for GStreamer media services
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
-%description plugin-mediaservice-audioengine
-This package contains the audio engine plugin for media-service
+%description gsttools
+This package contains a shared library for the GStreamer QtMultimedia media services
+
+%package plugin-mediaservice-gstaudiodecoder
+Summary:    Qt Multimedia - GStreamer audio decoder media service
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
+
+%description plugin-mediaservice-gstaudiodecoder
+This package contains the GStreamer audio decoder plugin for QtMultimedia
+
+%package plugin-mediaservice-gstcamerabin
+Summary:    Qt Multimedia - GStreamer camerabin video capture media service
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
+
+%description plugin-mediaservice-gstcamerabin
+This package contains the GStreamer camerabin video capture plugin for QtMultimedia
+
+%package plugin-mediaservice-gstmediacapture
+Summary:    Qt Multimedia - GStreamer video4linux2 video capture media service
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
+
+%description plugin-mediaservice-gstmediacapture
+This package contains the GStreamer video4linux2 video capture plugin for QtMultimedia
+
+%package plugin-mediaservice-gstmediaplayer
+Summary:    Qt Multimedia - GStreamer playback media service
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
+Provides:   qt5-qtmultimedia-plugin-mediaservice-audioengine > 5.0.2-1.2.1
+Obsoletes:  qt5-qtmultimedia-plugin-mediaservice-audioengine <= 5.0.2-1.2.1
+
+%description plugin-mediaservice-gstmediaplayer
+This package contains the GStreamer media playback plugin for QtMultimedia
 
 %package plugin-playlistformats-m3u
 Summary:    Qt Multimedia - M3U playlist support
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
 %description plugin-playlistformats-m3u
 This package contains the M3U playlist support
@@ -105,6 +152,10 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %postun
 /sbin/ldconfig
 
+%post gsttools
+/sbin/ldconfig
+%postun gsttools
+/sbin/ldconfig
 
 
 
@@ -125,9 +176,11 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %{_libdir}/libQt5Multimedia.so
 %{_libdir}/libQt5MultimediaWidgets.so
 %{_libdir}/libQt5MultimediaQuick_p.so
+%{_libdir}/libqgsttools_p.so
 %{_libdir}/libQt5Multimedia.prl
 %{_libdir}/libQt5MultimediaWidgets.prl
 %{_libdir}/libQt5MultimediaQuick_p.prl
+%{_libdir}/libqgsttools_p.prl
 %{_libdir}/pkgconfig/*
 %{_includedir}/qt5/*
 %{_datadir}/qt5/mkspecs/
@@ -138,9 +191,26 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %defattr(-,root,root,-)
 %{_libdir}/qt5/qml/QtMultimedia/
 
-%files plugin-mediaservice-audioengine
+%files gsttools
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/mediaservice/libqtmedia_audioengine.so
+%{_libdir}/libqgsttools_p.so.1
+%{_libdir}/libqgsttools_p.so.1.*
+
+%files plugin-mediaservice-gstaudiodecoder
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/mediaservice/libgstaudiodecoder.so
+
+%files plugin-mediaservice-gstcamerabin
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/mediaservice/libgstcamerabin.so
+
+%files plugin-mediaservice-gstmediacapture
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/mediaservice/libgstmediacapture.so
+
+%files plugin-mediaservice-gstmediaplayer
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/mediaservice/libgstmediaplayer.so
 
 %files plugin-playlistformats-m3u
 %defattr(-,root,root,-)

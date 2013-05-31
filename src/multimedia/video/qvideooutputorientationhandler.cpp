@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Research In Motion
+** Copyright (C) 2013 Research In Motion
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the Qt Toolkit.
@@ -38,81 +38,48 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "bbserviceplugin.h"
 
-#ifndef Q_OS_BLACKBERRY_TABLET
-#include "bbcameraservice.h"
-#include "bbvideodeviceselectorcontrol.h"
-#endif
-#include "bbmediaplayerservice.h"
+#include "qvideooutputorientationhandler_p.h"
 
-#include <QDebug>
+#include <QGuiApplication>
+#include <QScreen>
+#include <qpa/qplatformscreen.h>
 
 QT_BEGIN_NAMESPACE
 
-BbServicePlugin::BbServicePlugin()
+QVideoOutputOrientationHandler::QVideoOutputOrientationHandler(QObject *parent)
+    : QObject(parent)
+    , m_currentOrientation(0)
 {
+    QScreen *screen = QGuiApplication::primaryScreen();
+
+    // we want to be informed about all orientation changes
+    screen->setOrientationUpdateMask(Qt::PortraitOrientation|Qt::LandscapeOrientation
+                                     |Qt::InvertedPortraitOrientation|Qt::InvertedLandscapeOrientation);
+
+    connect(screen, SIGNAL(orientationChanged(Qt::ScreenOrientation)),
+            this, SLOT(screenOrientationChanged(Qt::ScreenOrientation)));
+
+    screenOrientationChanged(screen->orientation());
 }
 
-QMediaService *BbServicePlugin::create(const QString &key)
+int QVideoOutputOrientationHandler::currentOrientation() const
 {
-#ifndef Q_OS_BLACKBERRY_TABLET
-    if (key == QLatin1String(Q_MEDIASERVICE_CAMERA))
-        return new BbCameraService();
-#endif
-
-    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER))
-        return new BbMediaPlayerService();
-
-    return 0;
+    return m_currentOrientation;
 }
 
-void BbServicePlugin::release(QMediaService *service)
+void QVideoOutputOrientationHandler::screenOrientationChanged(Qt::ScreenOrientation orientation)
 {
-    delete service;
-}
+    const QScreen *screen = QGuiApplication::primaryScreen();
+    const QPlatformScreen *platformScreen = screen->handle();
 
-QMediaServiceProviderHint::Features BbServicePlugin::supportedFeatures(const QByteArray &service) const
-{
-    Q_UNUSED(service)
-    return QMediaServiceProviderHint::Features();
-}
+    const int angle = (360 - screen->angleBetween(platformScreen->nativeOrientation(), orientation));
 
-QList<QByteArray> BbServicePlugin::devices(const QByteArray &service) const
-{
-    if (service == Q_MEDIASERVICE_CAMERA) {
-        if (m_cameraDevices.isEmpty())
-            updateDevices();
+    if (angle == m_currentOrientation)
+        return;
 
-        return m_cameraDevices;
-    }
-
-    return QList<QByteArray>();
-}
-
-QString BbServicePlugin::deviceDescription(const QByteArray &service, const QByteArray &device)
-{
-    if (service == Q_MEDIASERVICE_CAMERA) {
-        if (m_cameraDevices.isEmpty())
-            updateDevices();
-
-        for (int i = 0; i < m_cameraDevices.count(); i++)
-            if (m_cameraDevices[i] == device)
-                return m_cameraDescriptions[i];
-    }
-
-    return QString();
-}
-
-void BbServicePlugin::updateDevices() const
-{
-#ifndef Q_OS_BLACKBERRY_TABLET
-    BbVideoDeviceSelectorControl::enumerateDevices(&m_cameraDevices, &m_cameraDescriptions);
-#endif
-
-    if (m_cameraDevices.isEmpty()) {
-        qWarning() << "No camera devices found";
-    }
+    m_currentOrientation = angle;
+    emit orientationChanged(m_currentOrientation);
 }
 
 QT_END_NAMESPACE

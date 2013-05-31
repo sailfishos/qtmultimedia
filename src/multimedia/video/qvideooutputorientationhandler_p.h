@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2012 Research In Motion
+** Copyright (C) 2013 Research In Motion
 ** Contact: http://www.qt-project.org/legal
 **
 ** This file is part of the Qt Toolkit.
@@ -38,81 +38,35 @@
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
-#include "bbserviceplugin.h"
 
-#ifndef Q_OS_BLACKBERRY_TABLET
-#include "bbcameraservice.h"
-#include "bbvideodeviceselectorcontrol.h"
-#endif
-#include "bbmediaplayerservice.h"
+#ifndef QVIDEOOUTPUTORIENTATIONHANDLER_P_H
+#define QVIDEOOUTPUTORIENTATIONHANDLER_P_H
 
-#include <QDebug>
+#include <qtmultimediadefs.h>
+
+#include <QObject>
 
 QT_BEGIN_NAMESPACE
 
-BbServicePlugin::BbServicePlugin()
+class Q_MULTIMEDIA_EXPORT QVideoOutputOrientationHandler : public QObject
 {
-}
+    Q_OBJECT
+public:
+    explicit QVideoOutputOrientationHandler(QObject *parent = 0);
 
-QMediaService *BbServicePlugin::create(const QString &key)
-{
-#ifndef Q_OS_BLACKBERRY_TABLET
-    if (key == QLatin1String(Q_MEDIASERVICE_CAMERA))
-        return new BbCameraService();
-#endif
+    int currentOrientation() const;
 
-    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER))
-        return new BbMediaPlayerService();
+signals:
+    void orientationChanged(int angle);
 
-    return 0;
-}
+private slots:
+    void screenOrientationChanged(Qt::ScreenOrientation orientation);
 
-void BbServicePlugin::release(QMediaService *service)
-{
-    delete service;
-}
-
-QMediaServiceProviderHint::Features BbServicePlugin::supportedFeatures(const QByteArray &service) const
-{
-    Q_UNUSED(service)
-    return QMediaServiceProviderHint::Features();
-}
-
-QList<QByteArray> BbServicePlugin::devices(const QByteArray &service) const
-{
-    if (service == Q_MEDIASERVICE_CAMERA) {
-        if (m_cameraDevices.isEmpty())
-            updateDevices();
-
-        return m_cameraDevices;
-    }
-
-    return QList<QByteArray>();
-}
-
-QString BbServicePlugin::deviceDescription(const QByteArray &service, const QByteArray &device)
-{
-    if (service == Q_MEDIASERVICE_CAMERA) {
-        if (m_cameraDevices.isEmpty())
-            updateDevices();
-
-        for (int i = 0; i < m_cameraDevices.count(); i++)
-            if (m_cameraDevices[i] == device)
-                return m_cameraDescriptions[i];
-    }
-
-    return QString();
-}
-
-void BbServicePlugin::updateDevices() const
-{
-#ifndef Q_OS_BLACKBERRY_TABLET
-    BbVideoDeviceSelectorControl::enumerateDevices(&m_cameraDevices, &m_cameraDescriptions);
-#endif
-
-    if (m_cameraDevices.isEmpty()) {
-        qWarning() << "No camera devices found";
-    }
-}
+private:
+    int m_currentOrientation;
+};
 
 QT_END_NAMESPACE
+
+
+#endif

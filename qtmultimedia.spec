@@ -96,8 +96,6 @@ Summary:    Qt Multimedia - GStreamer playback media service
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
-Provides:   qt5-qtmultimedia-plugin-mediaservice-audioengine > 5.0.2-1.2.1
-Obsoletes:  qt5-qtmultimedia-plugin-mediaservice-audioengine <= 5.0.2-1.2.1
 
 %description plugin-mediaservice-gstmediaplayer
 This package contains the GStreamer media playback plugin for QtMultimedia

@@ -1,4 +1,7 @@
-* Thu May 30 2021 Andrew den Exter <andrew.den.exter@jollamobile.com> - 5.0.2
+* Fri May 31 2012 Andrew den Exter <andrew.den.exter@jollamobile.com> - 5.0.2
+- Remove obsoletion of audioengine media service
+
+* Thu May 30 2012 Andrew den Exter <andrew.den.exter@jollamobile.com> - 5.0.2
 - Package the GStreamer media services
 
 * Sat Apr 27 2013 Chris Leach <cxl000@hotmail.com> - 5.0.2

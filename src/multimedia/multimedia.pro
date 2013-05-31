@@ -52,7 +52,8 @@ include(recording/recording.pri)
 include(video/video.pri)
 
 ANDROID_BUNDLED_JAR_DEPENDENCIES = \
-    jar/QtMultimedia-bundled.jar:org.qtproject.qt5.android.multimedia.QtCamera
+    jar/QtMultimedia-bundled.jar:org.qtproject.qt5.android.multimedia.QtMultimediaUtils \
+    jar/QtMultimedia-bundled.jar:org.qtproject.qt5.android.multimedia.QtActivityStateListener
 ANDROID_JAR_DEPENDENCIES = \
     jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtMultimediaUtils \
     jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtActivityStateListener

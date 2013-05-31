@@ -45,6 +45,7 @@
 #include "qandroidcapturesession.h"
 #include "qandroidcameracontrol.h"
 #include "qandroidvideodeviceselectorcontrol.h"
+#include "qandroidaudioinputselectorcontrol.h"
 #include "qandroidcamerasession.h"
 #include "qandroidvideorendercontrol.h"
 #include "qandroidcamerazoomcontrol.h"
@@ -61,31 +62,58 @@
 #include "qandroidvideoencodersettingscontrol.h"
 #include "qandroidmediacontainercontrol.h"
 
+#include <qmediaserviceproviderplugin.h>
+
 QT_BEGIN_NAMESPACE
 
-QAndroidCaptureService::QAndroidCaptureService(QObject *parent)
+QAndroidCaptureService::QAndroidCaptureService(const QString &service, QObject *parent)
     : QMediaService(parent)
+    , m_service(service)
     , m_videoRendererControl(0)
 {
-    m_cameraSession = new QAndroidCameraSession;
-    m_cameraControl = new QAndroidCameraControl(m_cameraSession);
-    m_videoInputControl = new QAndroidVideoDeviceSelectorControl(m_cameraSession);
-    m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
-    m_cameraExposureControl = new QAndroidCameraExposureControl(m_cameraSession);
-    m_cameraFlashControl = new QAndroidCameraFlashControl(m_cameraSession);
-    m_cameraFocusControl = new QAndroidCameraFocusControl(m_cameraSession);
-    m_cameraLocksControl = new QAndroidCameraLocksControl(m_cameraSession);
-    m_cameraImageProcessingControl = new QAndroidCameraImageProcessingControl(m_cameraSession);
-    m_imageEncoderControl = new QAndroidImageEncoderControl(m_cameraSession);
-    m_imageCaptureControl = new QAndroidCameraImageCaptureControl(m_cameraSession);
-    m_captureDestinationControl = new QAndroidCameraCaptureDestinationControl(m_cameraSession);
-    m_captureBufferFormatControl = new QAndroidCameraCaptureBufferFormatControl;
+    if (m_service == QLatin1String(Q_MEDIASERVICE_CAMERA)) {
+        m_cameraSession = new QAndroidCameraSession;
+        m_cameraControl = new QAndroidCameraControl(m_cameraSession);
+        m_videoInputControl = new QAndroidVideoDeviceSelectorControl(m_cameraSession);
+        m_cameraZoomControl = new QAndroidCameraZoomControl(m_cameraSession);
+        m_cameraExposureControl = new QAndroidCameraExposureControl(m_cameraSession);
+        m_cameraFlashControl = new QAndroidCameraFlashControl(m_cameraSession);
+        m_cameraFocusControl = new QAndroidCameraFocusControl(m_cameraSession);
+        m_cameraLocksControl = new QAndroidCameraLocksControl(m_cameraSession);
+        m_cameraImageProcessingControl = new QAndroidCameraImageProcessingControl(m_cameraSession);
+        m_imageEncoderControl = new QAndroidImageEncoderControl(m_cameraSession);
+        m_imageCaptureControl = new QAndroidCameraImageCaptureControl(m_cameraSession);
+        m_captureDestinationControl = new QAndroidCameraCaptureDestinationControl(m_cameraSession);
+        m_captureBufferFormatControl = new QAndroidCameraCaptureBufferFormatControl;
+        m_audioInputControl = 0;
+    } else {
+        m_cameraSession = 0;
+        m_cameraControl = 0;
+        m_videoInputControl = 0;
+        m_cameraZoomControl = 0;
+        m_cameraExposureControl = 0;
+        m_cameraFlashControl = 0;
+        m_cameraFocusControl = 0;
+        m_cameraLocksControl = 0;
+        m_cameraImageProcessingControl = 0;
+        m_imageEncoderControl = 0;
+        m_imageCaptureControl = 0;
+        m_captureDestinationControl = 0;
+        m_captureBufferFormatControl = 0;
+        m_videoEncoderSettingsControl = 0;
+    }
 
     m_captureSession = new QAndroidCaptureSession(m_cameraSession);
     m_recorderControl = new QAndroidMediaRecorderControl(m_captureSession);
     m_audioEncoderSettingsControl = new QAndroidAudioEncoderSettingsControl(m_captureSession);
-    m_videoEncoderSettingsControl = new QAndroidVideoEncoderSettingsControl(m_captureSession);
     m_mediaContainerControl = new QAndroidMediaContainerControl(m_captureSession);
+
+    if (m_service == QLatin1String(Q_MEDIASERVICE_CAMERA)) {
+        m_videoEncoderSettingsControl = new QAndroidVideoEncoderSettingsControl(m_captureSession);
+    } else {
+        m_audioInputControl = new QAndroidAudioInputSelectorControl(m_captureSession);
+        m_captureSession->setAudioInput(m_audioInputControl->defaultInput());
+    }
 }
 
 QAndroidCaptureService::~QAndroidCaptureService()
@@ -96,6 +124,7 @@ QAndroidCaptureService::~QAndroidCaptureService()
     delete m_recorderControl;
     delete m_captureSession;
     delete m_cameraControl;
+    delete m_audioInputControl;
     delete m_videoInputControl;
     delete m_videoRendererControl;
     delete m_cameraZoomControl;
@@ -127,6 +156,9 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 
     if (qstrcmp(name, QCameraControl_iid) == 0)
         return m_cameraControl;
+
+    if (qstrcmp(name, QAudioInputSelectorControl_iid) == 0)
+        return m_audioInputControl;
 
     if (qstrcmp(name, QVideoDeviceSelectorControl_iid) == 0)
         return m_videoInputControl;
@@ -161,12 +193,12 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
     if (qstrcmp(name, QCameraCaptureBufferFormatControl_iid) == 0)
         return m_captureBufferFormatControl;
 
-    if (qstrcmp(name, QVideoRendererControl_iid) == 0) {
-        if (!m_videoRendererControl) {
-            m_videoRendererControl = new QAndroidVideoRendererControl;
-            m_cameraSession->setVideoPreview(m_videoRendererControl);
-            return m_videoRendererControl;
-        }
+    if (qstrcmp(name, QVideoRendererControl_iid) == 0
+            && m_service == QLatin1String(Q_MEDIASERVICE_CAMERA)
+            && !m_videoRendererControl) {
+        m_videoRendererControl = new QAndroidVideoRendererControl;
+        m_cameraSession->setVideoPreview(m_videoRendererControl);
+        return m_videoRendererControl;
     }
 
     return 0;
@@ -174,7 +206,7 @@ QMediaControl *QAndroidCaptureService::requestControl(const char *name)
 
 void QAndroidCaptureService::releaseControl(QMediaControl *control)
 {
-    if (control == m_videoRendererControl) {
+    if (control && control == m_videoRendererControl) {
         m_cameraSession->setVideoPreview(0);
         delete m_videoRendererControl;
         m_videoRendererControl = 0;

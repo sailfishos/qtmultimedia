@@ -109,9 +109,21 @@ public class QtMultimediaUtils
             case 2:
                 dirType = Environment.DIRECTORY_DCIM;
                 break;
+            default:
+                break;
         }
 
-        File path = Environment.getExternalStoragePublicDirectory(dirType);
+        File path = new File("");
+        if (type == 3) {
+            // There is no API for knowing the standard location for sounds
+            // such as voice recording. Though, it's typically in the 'Sounds'
+            // directory at the root of the external storage
+            path = new File(Environment.getExternalStorageDirectory().getAbsolutePath()
+                            + File.separator + "Sounds");
+        } else {
+            path = Environment.getExternalStoragePublicDirectory(dirType);
+        }
+
         path.mkdirs(); // make sure the directory exists
 
         return path.getAbsolutePath();

@@ -39,37 +39,35 @@
 **
 ****************************************************************************/
 
-#ifndef QANDROIDMEDIASTORAGELOCATION_H
-#define QANDROIDMEDIASTORAGELOCATION_H
+#ifndef QANDROIDAUDIOINPUTSELECTORCONTROL_H
+#define QANDROIDAUDIOINPUTSELECTORCONTROL_H
 
-#include <QCamera>
-#include <QDir>
-#include <QHash>
-#include <QMutex>
+#include <qaudioinputselectorcontrol.h>
 
 QT_BEGIN_NAMESPACE
 
-class QAndroidMediaStorageLocation
+class QAndroidCaptureSession;
+
+class QAndroidAudioInputSelectorControl : public QAudioInputSelectorControl
 {
+    Q_OBJECT
 public:
-    enum CaptureSource {
-        Camera,
-        Audio
-    };
+    explicit QAndroidAudioInputSelectorControl(QAndroidCaptureSession *session);
 
-    QAndroidMediaStorageLocation();
+    QList<QString> availableInputs() const;
+    QString inputDescription(const QString& name) const;
+    QString defaultInput() const;
 
-    QDir defaultDir(CaptureSource source) const;
+    QString activeInput() const;
+    void setActiveInput(const QString& name);
 
-    QString generateFileName(const QString &requestedName, CaptureSource source, const QString &prefix, const QString &extension) const;
-    QString generateFileName(const QString &prefix, const QDir &dir, const QString &extension) const;
+    static QList<QByteArray> availableDevices();
+    static QString availableDeviceDescription(const QByteArray &device);
 
 private:
-    mutable QHash<QString, qint64> m_lastUsedIndex;
-
-    mutable QMutex m_mutex;
+    QAndroidCaptureSession *m_session;
 };
 
 QT_END_NAMESPACE
 
-#endif // QANDROIDMEDIASTORAGELOCATION_H
+#endif // QANDROIDAUDIOINPUTSELECTORCONTROL_H

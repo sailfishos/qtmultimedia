@@ -44,6 +44,7 @@
 #include "qandroidmediaservice.h"
 #include "qandroidcaptureservice.h"
 #include "qandroidvideodeviceselectorcontrol.h"
+#include "qandroidaudioinputselectorcontrol.h"
 #include "jmediaplayer.h"
 #include "jsurfacetexture.h"
 #include "jsurfacetextureholder.h"
@@ -68,8 +69,10 @@ QMediaService *QAndroidMediaServicePlugin::create(const QString &key)
     if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER))
         return new QAndroidMediaService;
 
-    if (key == QLatin1String(Q_MEDIASERVICE_CAMERA))
-        return new QAndroidCaptureService;
+    if (key == QLatin1String(Q_MEDIASERVICE_CAMERA)
+            || key == QLatin1String(Q_MEDIASERVICE_AUDIOSOURCE)) {
+        return new QAndroidCaptureService(key);
+    }
 
     qWarning() << "Android service plugin: unsupported key:" << key;
     return 0;
@@ -83,10 +86,13 @@ void QAndroidMediaServicePlugin::release(QMediaService *service)
 QMediaServiceProviderHint::Features QAndroidMediaServicePlugin::supportedFeatures(const QByteArray &service) const
 {
     if (service == Q_MEDIASERVICE_MEDIAPLAYER)
-        return  QMediaServiceProviderHint::VideoSurface;
+        return QMediaServiceProviderHint::VideoSurface;
 
     if (service == Q_MEDIASERVICE_CAMERA)
         return QMediaServiceProviderHint::VideoSurface | QMediaServiceProviderHint::RecordingSupport;
+
+    if (service == Q_MEDIASERVICE_AUDIOSOURCE)
+        return QMediaServiceProviderHint::RecordingSupport;
 
     return QMediaServiceProviderHint::Features();
 }
@@ -96,6 +102,9 @@ QList<QByteArray> QAndroidMediaServicePlugin::devices(const QByteArray &service)
     if (service == Q_MEDIASERVICE_CAMERA)
         return QAndroidVideoDeviceSelectorControl::availableDevices();
 
+    if (service == Q_MEDIASERVICE_AUDIOSOURCE)
+        return QAndroidAudioInputSelectorControl::availableDevices();
+
     return QList<QByteArray>();
 }
 
@@ -103,6 +112,9 @@ QString QAndroidMediaServicePlugin::deviceDescription(const QByteArray &service,
 {
     if (service == Q_MEDIASERVICE_CAMERA)
         return QAndroidVideoDeviceSelectorControl::availableDeviceDescription(device);
+
+    if (service == Q_MEDIASERVICE_AUDIOSOURCE)
+        return QAndroidAudioInputSelectorControl::availableDeviceDescription(device);
 
     return QString();
 }

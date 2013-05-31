@@ -477,7 +477,7 @@ void QAndroidCameraSession::processCapturedImage(int id,
 
     if (dest & QCameraImageCapture::CaptureToFile) {
         const QString actualFileName = m_mediaStorageLocation.generateFileName(fileName,
-                                                                               QCamera::CaptureStillImage,
+                                                                               QAndroidMediaStorageLocation::Camera,
                                                                                QLatin1String("IMG_"),
                                                                                QLatin1String("jpg"));
 

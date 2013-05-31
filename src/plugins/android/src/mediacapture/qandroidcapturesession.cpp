@@ -53,6 +53,7 @@ QAndroidCaptureSession::QAndroidCaptureSession(QAndroidCameraSession *cameraSess
     : QObject()
     , m_mediaRecorder(0)
     , m_cameraSession(cameraSession)
+    , m_audioSource(JMediaRecorder::DefaultAudioSource)
     , m_duration(0)
     , m_state(QMediaRecorder::StoppedState)
     , m_status(QMediaRecorder::UnloadedStatus)
@@ -80,6 +81,31 @@ QAndroidCaptureSession::~QAndroidCaptureSession()
 {
     stop();
     delete m_mediaRecorder;
+}
+
+void QAndroidCaptureSession::setAudioInput(const QString &input)
+{
+    if (m_audioInput == input)
+        return;
+
+    m_audioInput = input;
+
+    if (m_audioInput == QLatin1String("default"))
+        m_audioSource = JMediaRecorder::DefaultAudioSource;
+    else if (m_audioInput == QLatin1String("mic"))
+        m_audioSource = JMediaRecorder::Mic;
+    else if (m_audioInput == QLatin1String("voice_uplink"))
+        m_audioSource = JMediaRecorder::VoiceUplink;
+    else if (m_audioInput == QLatin1String("voice_downlink"))
+        m_audioSource = JMediaRecorder::VoiceDownlink;
+    else if (m_audioInput == QLatin1String("voice_call"))
+        m_audioSource = JMediaRecorder::VoiceCall;
+    else if (m_audioInput == QLatin1String("voice_recognition"))
+        m_audioSource = JMediaRecorder::VoiceRecognition;
+    else
+        m_audioSource = JMediaRecorder::DefaultAudioSource;
+
+    emit audioInputChanged(m_audioInput);
 }
 
 QUrl QAndroidCaptureSession::outputLocation() const
@@ -159,7 +185,7 @@ bool QAndroidCaptureSession::start()
             m_mediaRecorder->setVideoSource(JMediaRecorder::Camera);
         }
     } else {
-        m_mediaRecorder->setAudioSource(JMediaRecorder::DefaultAudioSource);
+        m_mediaRecorder->setAudioSource(m_audioSource);
     }
 
     // Set output format
@@ -185,7 +211,8 @@ bool QAndroidCaptureSession::start()
     // Set output file
     QString filePath = m_mediaStorageLocation.generateFileName(m_outputLocation.isLocalFile() ? m_outputLocation.toLocalFile()
                                                                                               : m_outputLocation.toString(),
-                                                               QCamera::CaptureVideo,
+                                                               m_cameraSession ? QAndroidMediaStorageLocation::Camera
+                                                                               : QAndroidMediaStorageLocation::Audio,
                                                                m_cameraSession ? QLatin1String("VID_")
                                                                                : QLatin1String("REC_"),
                                                                m_containerFormat);
@@ -250,7 +277,8 @@ void QAndroidCaptureSession::stop(bool error)
         // with the Android media scanner so it appears immediately in apps
         // such as the gallery.
         QString mediaPath = m_outputLocation.toLocalFile();
-        QString standardLoc = JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM);
+        QString standardLoc = m_cameraSession ? JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM)
+                                              : JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::Sounds);
         if (mediaPath.startsWith(standardLoc))
             JMultimediaUtils::registerMediaFile(mediaPath);
     }
@@ -330,11 +358,11 @@ void QAndroidCaptureSession::applySettings()
 
     // audio settings
     if (m_audioSettingsDirty) {
-        if (m_audioSettings.channelCount() == -1)
+        if (m_audioSettings.channelCount() <= 0)
             m_audioSettings.setChannelCount(m_defaultSettings.audioChannels);
-        if (m_audioSettings.bitRate() == -1)
+        if (m_audioSettings.bitRate() <= 0)
             m_audioSettings.setBitRate(m_defaultSettings.audioBitRate);
-        if (m_audioSettings.sampleRate() == -1)
+        if (m_audioSettings.sampleRate() <= 0)
             m_audioSettings.setSampleRate(m_defaultSettings.audioSampleRate);
 
         if (m_audioSettings.codec().isEmpty())
@@ -372,7 +400,7 @@ void QAndroidCaptureSession::applySettings()
 
         if (m_videoSettings.frameRate() <= 0)
             m_videoSettings.setFrameRate(m_defaultSettings.videoFrameRate);
-        if (m_videoSettings.bitRate() == -1)
+        if (m_videoSettings.bitRate() <= 0)
             m_videoSettings.setBitRate(m_defaultSettings.videoBitRate);
 
         if (m_videoSettings.codec().isEmpty())

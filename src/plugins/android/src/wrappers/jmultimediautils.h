@@ -54,7 +54,8 @@ public:
     enum MediaType {
         Music = 0,
         Movies = 1,
-        DCIM = 2
+        DCIM = 2,
+        Sounds = 3
     };
 
     JMultimediaUtils();

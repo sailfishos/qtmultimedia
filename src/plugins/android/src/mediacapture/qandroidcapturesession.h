@@ -64,6 +64,9 @@ public:
     QList<QSize> supportedResolutions() const { return m_supportedResolutions; }
     QList<qreal> supportedFrameRates() const { return m_supportedFramerates; }
 
+    QString audioInput() const { return m_audioInput; }
+    void setAudioInput(const QString &input);
+
     QUrl outputLocation() const;
     bool setOutputLocation(const QUrl &location);
 
@@ -86,6 +89,7 @@ public:
     void applySettings();
 
 Q_SIGNALS:
+    void audioInputChanged(const QString& name);
     void stateChanged(QMediaRecorder::State state);
     void statusChanged(QMediaRecorder::Status status);
     void durationChanged(qint64 position);
@@ -144,6 +148,9 @@ private:
 
     JMediaRecorder *m_mediaRecorder;
     QAndroidCameraSession *m_cameraSession;
+
+    QString m_audioInput;
+    JMediaRecorder::AudioSource m_audioSource;
 
     QAndroidMediaStorageLocation m_mediaStorageLocation;
 

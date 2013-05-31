@@ -49,11 +49,14 @@ QAndroidMediaStorageLocation::QAndroidMediaStorageLocation()
 {
 }
 
-QDir QAndroidMediaStorageLocation::defaultDir(QCamera::CaptureMode) const
+QDir QAndroidMediaStorageLocation::defaultDir(CaptureSource source) const
 {
     QStringList dirCandidates;
 
-    dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM);
+    if (source == Camera)
+        dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::DCIM);
+    else
+        dirCandidates << JMultimediaUtils::getDefaultMediaDirectory(JMultimediaUtils::Sounds);
     dirCandidates << QDir::homePath();
     dirCandidates << QDir::currentPath();
     dirCandidates << QDir::tempPath();
@@ -67,17 +70,17 @@ QDir QAndroidMediaStorageLocation::defaultDir(QCamera::CaptureMode) const
 }
 
 QString QAndroidMediaStorageLocation::generateFileName(const QString &requestedName,
-                                                       QCamera::CaptureMode mode,
+                                                       CaptureSource source,
                                                        const QString &prefix,
                                                        const QString &extension) const
 {
     if (requestedName.isEmpty())
-        return generateFileName(prefix, defaultDir(mode), extension);
+        return generateFileName(prefix, defaultDir(source), extension);
 
     QString path = requestedName;
 
     if (QFileInfo(path).isRelative())
-        path = defaultDir(mode).absoluteFilePath(path);
+        path = defaultDir(source).absoluteFilePath(path);
 
     if (QFileInfo(path).isDir())
         return generateFileName(prefix, QDir(path), extension);

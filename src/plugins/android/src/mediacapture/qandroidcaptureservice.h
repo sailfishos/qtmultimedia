@@ -51,6 +51,7 @@ class QAndroidMediaRecorderControl;
 class QAndroidCaptureSession;
 class QAndroidCameraControl;
 class QAndroidVideoDeviceSelectorControl;
+class QAndroidAudioInputSelectorControl;
 class QAndroidCameraSession;
 class QAndroidVideoRendererControl;
 class QAndroidCameraZoomControl;
@@ -72,17 +73,20 @@ class QAndroidCaptureService : public QMediaService
     Q_OBJECT
 
 public:
-    explicit QAndroidCaptureService(QObject *parent = 0);
+    explicit QAndroidCaptureService(const QString &service, QObject *parent = 0);
     virtual ~QAndroidCaptureService();
 
     QMediaControl *requestControl(const char *name);
     void releaseControl(QMediaControl *);
 
 private:
+    QString m_service;
+
     QAndroidMediaRecorderControl *m_recorderControl;
     QAndroidCaptureSession *m_captureSession;
     QAndroidCameraControl *m_cameraControl;
     QAndroidVideoDeviceSelectorControl *m_videoInputControl;
+    QAndroidAudioInputSelectorControl *m_audioInputControl;
     QAndroidCameraSession *m_cameraSession;
     QAndroidVideoRendererControl *m_videoRendererControl;
     QAndroidCameraZoomControl *m_cameraZoomControl;

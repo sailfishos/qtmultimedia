@@ -631,7 +631,7 @@ void tst_QAudioInput::push()
     QVERIFY(wavHeader.write(*audioFile));
 
     // Set a large buffer to avoid underruns during QTest::qWaits
-    audioInput.setBufferSize(128*1024);
+    audioInput.setBufferSize(audioFormat.bytesForDuration(1000000));
 
     QIODevice* feed = audioInput.start();
 
@@ -699,7 +699,7 @@ void tst_QAudioInput::pushSuspendResume()
     QAudioInput audioInput(audioFormat, this);
 
     audioInput.setNotifyInterval(100);
-    audioInput.setBufferSize(128*1024);
+    audioInput.setBufferSize(audioFormat.bytesForDuration(1000000));
 
     QSignalSpy notifySignal(&audioInput, SIGNAL(notify()));
     QSignalSpy stateSignal(&audioInput, SIGNAL(stateChanged(QAudio::State)));
@@ -767,9 +767,9 @@ void tst_QAudioInput::pushSuspendResume()
     QVERIFY(audioInput.processedUSecs() == processedUs);
 
     // Drain any data, in case we run out of space when resuming
-    while (audioInput.bytesReady() >= audioInput.periodSize()) {
+    const int reads = audioInput.bytesReady() / audioInput.periodSize();
+    for (int r = 0; r < reads; ++r)
         feed->read(buffer.data(), audioInput.periodSize());
-    }
 
     audioInput.resume();
 

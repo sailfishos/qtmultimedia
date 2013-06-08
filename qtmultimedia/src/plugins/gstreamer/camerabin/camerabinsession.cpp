@@ -50,6 +50,7 @@
 #include "camerabinflash.h"
 #include "camerabinfocus.h"
 #include "camerabinlocks.h"
+#include "camerabinzoom.h"
 #endif
 
 #include "camerabinimageprocessing.h"
@@ -162,6 +163,7 @@ CameraBinSession::CameraBinSession(QObject *parent)
     m_cameraFlashControl = new CameraBinFlash(this);
     m_cameraFocusControl = new CameraBinFocus(this);
     m_cameraLocksControl = new CameraBinLocks(this);
+    m_cameraZoomControl = new CameraBinZoom(this);
 #endif
     m_imageProcessingControl = new CameraBinImageProcessing(this);
     m_captureDestinationControl = new CameraBinCaptureDestination(this);
@@ -670,7 +672,7 @@ void CameraBinSession::updateBusyStatus(GObject *o, GParamSpec *p, gpointer d)
     Q_UNUSED(p);
     CameraBinSession *session = reinterpret_cast<CameraBinSession *>(d);
 
-    bool idle = false;
+    gboolean idle = false;
     g_object_get(o, "idle", &idle, NULL);
     bool busy = !idle;
 

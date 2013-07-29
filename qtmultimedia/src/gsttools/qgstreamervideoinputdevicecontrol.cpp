@@ -111,6 +111,12 @@ void QGstreamerVideoInputDeviceControl::update()
     m_names << QLatin1String("primary") << QLatin1String("secondary");
     m_descriptions << tr("Main camera") << tr("Front camera");
 #else
+    if(!qgetenv("QT_GSTREAMER_CAMERABIN_SRC").isEmpty()) {;
+        m_names << QLatin1String("primary") << QLatin1String("secondary");
+        m_descriptions << tr("Main camera") << tr("Front camera");
+        return;
+    }
+
     QDir devDir("/dev");
     devDir.setFilter(QDir::System);
 

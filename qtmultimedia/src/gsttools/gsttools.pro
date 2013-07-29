@@ -49,6 +49,7 @@ PRIVATE_HEADERS += \
     qgstcodecsinfo_p.h \
     qgstreamervideoprobecontrol_p.h \
     qgstreameraudioprobecontrol_p.h \
+    qgstreamervideosinkcontrol_p.h \
 
 SOURCES += \
     qgstbufferpoolinterface.cpp \
@@ -65,6 +66,7 @@ SOURCES += \
     gstvideoconnector.c \
     qgstreamervideoprobecontrol.cpp \
     qgstreameraudioprobecontrol.cpp \
+    qgstreamervideosinkcontrol.cpp \
 
 config_xvideo {
     DEFINES += HAVE_XVIDEO

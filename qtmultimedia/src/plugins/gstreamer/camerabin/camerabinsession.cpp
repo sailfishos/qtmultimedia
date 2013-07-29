@@ -90,6 +90,7 @@
 #define AUDIO_SOURCE_PROPERTY "audio-source"
 #define SUPPORTED_IMAGE_CAPTURE_CAPS_PROPERTY "image-capture-supported-caps"
 #define SUPPORTED_VIDEO_CAPTURE_CAPS_PROPERTY "video-capture-supported-caps"
+#define SUPPORTED_VIEWFINDER_CAPS_PROPERTY "viewfinder-supported-caps"
 #define IMAGE_CAPTURE_CAPS_PROPERTY "image-capture-caps"
 #define VIDEO_CAPTURE_CAPS_PROPERTY "video-capture-caps"
 #define VIEWFINDER_CAPS_PROPERTY "viewfinder-caps"
@@ -168,6 +169,8 @@ CameraBinSession::CameraBinSession(QObject *parent)
     m_imageProcessingControl = new CameraBinImageProcessing(this);
     m_captureDestinationControl = new CameraBinCaptureDestination(this);
     m_captureBufferFormatControl = new CameraBinCaptureBufferFormat(this);
+
+    g_object_set(G_OBJECT(m_camerabin), "flags", 0x00000001 | 0x00000002 | 0x00000004 | 0x00000008, NULL);
 
     //post image preview in RGB format
     g_object_set(G_OBJECT(m_camerabin), POST_PREVIEWS_PROPERTY, TRUE, NULL);
@@ -275,7 +278,18 @@ static GstCaps *resolutionToCaps(const QSize &resolution,
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
-                                                   NULL), NULL);
+                                                   NULL),
+                                 gst_structure_new("video/x-raw-data",
+                                                   "width", G_TYPE_INT, resolution.width(),
+                                                   "height", G_TYPE_INT, resolution.height(),
+                                                   "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   NULL),
+                                 gst_structure_new("image/jpeg",
+                                                   "width", G_TYPE_INT, resolution.width(),
+                                                   "height", G_TYPE_INT, resolution.height(),
+                                                   "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   NULL),
+                                 NULL);
     } else {
         caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
                                                      "width", G_TYPE_INT, resolution.width(),
@@ -283,85 +297,46 @@ static GstCaps *resolutionToCaps(const QSize &resolution,
                                                      NULL),
                                   gst_structure_new ("video/x-raw-rgb",
                                                      "width", G_TYPE_INT, resolution.width(),
-                                                     "height", G_TYPE_INT, resolution.height(), NULL), NULL);
+                                                     "height", G_TYPE_INT, resolution.height(),
+                                                     NULL),
+                                  gst_structure_new("video/x-raw-data",
+                                                    "width", G_TYPE_INT, resolution.width(),
+                                                    "height", G_TYPE_INT, resolution.height(),
+                                                    NULL),
+                                  gst_structure_new ("image/jpeg",
+                                                     "width", G_TYPE_INT, resolution.width(),
+                                                     "height", G_TYPE_INT, resolution.height(),
+                                                     NULL),
+                                  NULL);
     }
     return caps;
 }
 
 void CameraBinSession::setupCaptureResolution()
 {
-    if (m_captureMode == QCamera::CaptureStillImage) {
-        QSize resolution = m_imageEncodeControl->imageSettings().resolution();
-
-        //by default select the maximum supported resolution
-        if (resolution.isEmpty()) {
-            bool continuous = false;
-            QList<QSize> resolutions = supportedResolutions(qMakePair<int,int>(0,0),
-                                                            &continuous,
-                                                            QCamera::CaptureStillImage);
-            if (!resolutions.isEmpty())
-                resolution = resolutions.last();
-        }
-
-        QSize viewfinderResolution = VIEWFINDER_RESOLUTION_4x3;
-
-        if (!resolution.isEmpty()) {
-            GstCaps *caps = resolutionToCaps(resolution);
+    QSize resolution = m_imageEncodeControl->imageSettings().resolution();
+    if (!resolution.isEmpty()) {
+        GstCaps *caps = resolutionToCaps(resolution);
 #if CAMERABIN_DEBUG
-            qDebug() << Q_FUNC_INFO << "set image resolution" << resolution << gst_caps_to_string(caps);
+        qDebug() << Q_FUNC_INFO << "set image resolution" << resolution << gst_caps_to_string(caps);
 #endif
-            g_object_set(m_camerabin, IMAGE_CAPTURE_CAPS_PROPERTY, caps, NULL);
-            gst_caps_unref(caps);
-
-            if (!resolution.isEmpty()) {
-                qreal aspectRatio = qreal(resolution.width()) / resolution.height();
-                if (aspectRatio < 1.4)
-                    viewfinderResolution = VIEWFINDER_RESOLUTION_4x3;
-                else if (aspectRatio > 1.7)
-                    viewfinderResolution = VIEWFINDER_RESOLUTION_16x9;
-                else
-                    viewfinderResolution = VIEWFINDER_RESOLUTION_3x2;
-            }
-        } else {
-            g_object_set(m_camerabin, IMAGE_CAPTURE_CAPS_PROPERTY, GST_CAPS_ANY, NULL);
-        }
-
-        //on low res cameras the viewfinder resolution should not be bigger
-        //then capture resolution
-        if (viewfinderResolution.width() > resolution.width() && !resolution.isEmpty())
-            viewfinderResolution = resolution;
-
-        GstCaps *viewfinderCaps = resolutionToCaps(viewfinderResolution);
-#if CAMERABIN_DEBUG
-        qDebug() << "Set viewfinder resolution" << viewfinderResolution <<gst_caps_to_string(viewfinderCaps);
-#endif
-        g_object_set(m_camerabin, VIEWFINDER_CAPS_PROPERTY, viewfinderCaps, NULL);
-        gst_caps_unref(viewfinderCaps);
+        g_object_set(m_camerabin, IMAGE_CAPTURE_CAPS_PROPERTY, caps, NULL);
+        gst_caps_unref(caps);
+    } else {
+        g_object_set(m_camerabin, IMAGE_CAPTURE_CAPS_PROPERTY, NULL, NULL);
     }
 
-    if (m_captureMode == QCamera::CaptureVideo) {
-        QSize resolution = m_videoEncodeControl->actualVideoSettings().resolution();
-        //qreal framerate = m_videoEncodeControl->videoSettings().frameRate();
-
-        if (resolution.isEmpty()) {
-            //select the hightest supported resolution
-            bool continuous = false;
-            QList<QSize> resolutions = supportedResolutions(qMakePair<int,int>(0,0),
-                                                            &continuous,
-                                                            QCamera::CaptureVideo);
-            if (!resolutions.isEmpty())
-                resolution = resolutions.last();
-        }
-
+    resolution = m_videoEncodeControl->actualVideoSettings().resolution();
+    //qreal framerate = m_videoEncodeControl->videoSettings().frameRate();
+    if (!resolution.isEmpty()) {
         GstCaps *caps = resolutionToCaps(resolution /*, framerate*/); //convert to rational
 #if CAMERABIN_DEBUG
         qDebug() << Q_FUNC_INFO << "set video resolution" << resolution << gst_caps_to_string(caps);
 #endif
-
-        //Use the same resolution for viewfinder and video capture
         g_object_set(m_camerabin, VIDEO_CAPTURE_CAPS_PROPERTY, caps, NULL);
-        g_object_set(m_camerabin, VIEWFINDER_CAPS_PROPERTY, caps, NULL);
         gst_caps_unref(caps);
+    } else {
+        g_object_set(m_camerabin, VIDEO_CAPTURE_CAPS_PROPERTY, NULL, NULL);
     }
 }
 
@@ -373,6 +348,9 @@ GstElement *CameraBinSession::buildCameraSource()
     GstElement *videoSrc = 0;
 
     QList<QByteArray> candidates;
+    QByteArray envCandidate = qgetenv("QT_GSTREAMER_CAMERABIN_SRC");
+    if (!envCandidate.isEmpty())
+        candidates << envCandidate;
     candidates << "subdevsrc" << "wrappercamerabinsrc";
     QByteArray sourceElementName;
 
@@ -386,12 +364,7 @@ GstElement *CameraBinSession::buildCameraSource()
 #if CAMERABIN_DEBUG
         qDebug() << "set camera device" << m_inputDevice;
 #endif
-        if (sourceElementName == "subdevsrc") {
-            if (m_inputDevice == QLatin1String("secondary"))
-                g_object_set(G_OBJECT(videoSrc), "camera-device", 1, NULL);
-            else
-                g_object_set(G_OBJECT(videoSrc), "camera-device", 0, NULL);
-        } else if (sourceElementName == "wrappercamerabinsrc") {
+        if (sourceElementName == "wrappercamerabinsrc") {
             GstElement *src = 0;
 
             if (m_videoInputFactory)
@@ -403,6 +376,10 @@ GstElement *CameraBinSession::buildCameraSource()
                 g_object_set(G_OBJECT(src), "device", m_inputDevice.toUtf8().constData(), NULL);
                 g_object_set(G_OBJECT(videoSrc), "video-source", src, NULL);
             }
+        } else if (m_inputDevice == QLatin1String("secondary")) {
+            g_object_set(G_OBJECT(videoSrc), "camera-device", 1, NULL);
+        } else {
+            g_object_set(G_OBJECT(videoSrc), "camera-device", 0, NULL);
         }
     }
 
@@ -646,14 +623,12 @@ void CameraBinSession::setState(QCamera::State newState)
             GstState pending = GST_STATE_NULL;
             gst_element_get_state(m_camerabin, &binState, &pending, 0);
 
-            if (captureMode() == QCamera::CaptureVideo) {
-                m_recorderControl->applySettings();
+            m_recorderControl->applySettings();
 
-                g_object_set (G_OBJECT(m_camerabin),
-                              "video-profile",
-                              m_recorderControl->videoProfile(),
-                              NULL);
-            }
+            g_object_set (G_OBJECT(m_camerabin),
+                          "video-profile",
+                          m_recorderControl->videoProfile(),
+                          NULL);
 
             setupCaptureResolution();
 

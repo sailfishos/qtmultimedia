@@ -165,13 +165,18 @@ GstEncodingProfile *CameraBinVideoEncoder::createProfile()
     if (codec.isEmpty())
         caps = gst_caps_new_any();
     else
-        caps = gst_caps_from_string(codec.toLatin1());
+        caps = gst_caps_from_string(codec.toUtf8());
 
-    return (GstEncodingProfile *)gst_encoding_video_profile_new(
+    GstEncodingVideoProfile *profile = gst_encoding_video_profile_new(
                 caps,
                 NULL, //preset
                 NULL, //restriction
-                0); //presence
+                1); //presence
+
+    gst_encoding_video_profile_set_pass(profile, 0);
+    gst_encoding_video_profile_set_variableframerate(profile, TRUE);
+
+    return (GstEncodingProfile *)profile;
 }
 
 QT_END_NAMESPACE

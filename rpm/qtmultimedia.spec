@@ -24,6 +24,7 @@ BuildRequires:  pkgconfig(gstreamer-video-0.10)
 BuildRequires:  pkgconfig(gstreamer-pbutils-0.10)
 BuildRequires:  pkgconfig(gstreamer-app-0.10)
 BuildRequires:  pkgconfig(gstreamer-plugins-bad-free-0.10)
+BuildRequires:  pkgconfig(libresourceqt5)
 
 %description
 Qt is a cross-platform application and UI framework. Using Qt, you can

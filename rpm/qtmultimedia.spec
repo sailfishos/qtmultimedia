@@ -72,6 +72,14 @@ Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 %description plugin-mediaservice-gstaudiodecoder
 This package contains the GStreamer audio decoder plugin for QtMultimedia
 
+%package plugin-resourcepolicy-resourceqt
+Summary:    Qt Multimedia - libresourceqt resource policy plugin
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
+
+%description plugin-resourcepolicy-resourceqt
+This package contains the libresourceqt resource policy plugin for QtMultimedia
+
 %package plugin-mediaservice-gstcamerabin
 Summary:    Qt Multimedia - GStreamer camerabin video capture media service
 Group:      Qt/Qt
@@ -215,5 +223,8 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %defattr(-,root,root,-)
 %{_libdir}/qt5/plugins/playlistformats/libqtmultimedia_m3u.so
 
+%files plugin-resourcepolicy-resourceqt
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/resourcepolicy/libresourceqt.so
 
 #### No changelog section, separate $pkg.changelog contains the history

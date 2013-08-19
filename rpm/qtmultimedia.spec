@@ -16,6 +16,8 @@ BuildRequires:  qt5-qtdeclarative-qtquick-devel
 BuildRequires:  qt5-qmake
 BuildRequires:  pkgconfig(alsa)
 BuildRequires:  fdupes
+BuildRequires:  pkgconfig(libpulse)
+BuildRequires:  pkgconfig(libpulse-mainloop-glib)
 BuildRequires:  pkgconfig(gstreamer-0.10)
 BuildRequires:  pkgconfig(gstreamer-base-0.10)
 BuildRequires:  pkgconfig(gstreamer-interfaces-0.10)
@@ -116,7 +118,13 @@ Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 %description plugin-playlistformats-m3u
 This package contains the M3U playlist support
 
+%package plugin-audio-pulseaudio
+Summary:    Qt Multimedia - Pulse Audio plugin
+Group:      Qt/Qt
+Requires:   %{name} = %{version}-%{release}
 
+%description plugin-audio-pulseaudio
+This package contains the pulse audio sound effect support.
 
 #### Build section
 
@@ -226,5 +234,9 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %files plugin-resourcepolicy-resourceqt
 %defattr(-,root,root,-)
 %{_libdir}/qt5/plugins/resourcepolicy/libresourceqt.so
+
+%files plugin-audio-pulseaudio
+%defattr(-,root,root,-)
+%{_libdir}/qt5/plugins/audio/libqtmedia_pulse.so
 
 #### No changelog section, separate $pkg.changelog contains the history

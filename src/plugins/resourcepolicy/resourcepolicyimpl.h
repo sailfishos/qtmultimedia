@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2013 Jolla Ltd, author: <robin.burchell@jollamobile.com>
 ** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
@@ -39,79 +40,45 @@
 **
 ****************************************************************************/
 
-#include <QtCore/qstring.h>
-#include <QtCore/qdebug.h>
-#include <QtCore/QFile>
+#ifndef RESOURCEPOLICYIMPL_H
+#define RESOURCEPOLICYIMPL_H
 
-#include "wmfserviceplugin.h"
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-#include "mfplayerservice.h"
-#endif
-#include "mfdecoderservice.h"
+#include <QObject>
 
-#include <mfapi.h>
+#include <private/qmediaresourceset_p.h>
 
-namespace
+namespace ResourcePolicy {
+    class ResourceSet;
+};
+
+class ResourcePolicyImpl : public QMediaPlayerResourceSetInterface
 {
-static int g_refCount = 0;
-void addRefCount()
-{
-    g_refCount++;
-    if (g_refCount == 1) {
-        CoInitialize(NULL);
-        MFStartup(MF_VERSION);
-    }
-}
+    Q_OBJECT
+public:
+    ResourcePolicyImpl(QObject *parent = 0);
 
-void releaseRefCount()
-{
-    g_refCount--;
-    if (g_refCount == 0) {
-        MFShutdown();
-        CoUninitialize();
-    }
-}
+    bool isVideoEnabled() const;
+    void setVideoEnabled(bool videoEnabled);
+    void acquire();
+    void release();
+    bool isGranted() const;
+    bool isAvailable() const;
 
-}
+private slots:
+    void handleResourcesGranted();
+    void handleResourcesDenied();
+    void handleResourcesLost();
 
-QMediaService* WMFServicePlugin::create(QString const& key)
-{
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER)) {
-        addRefCount();
-        return new MFPlayerService;
-    }
-#endif
-    if (key == QLatin1String(Q_MEDIASERVICE_AUDIODECODER)) {
-        addRefCount();
-        return new MFAudioDecoderService;
-    }
-    //qDebug() << "unsupported key:" << key;
-    return 0;
-}
+private:
+    enum ResourceStatus {
+        Initial = 0,
+        RequestedResource,
+        GrantedResource
+    };
 
-void WMFServicePlugin::release(QMediaService *service)
-{
-    delete service;
-    releaseRefCount();
-}
+    bool m_videoEnabled;
+    ResourcePolicy::ResourceSet *m_resourceSet;
+    ResourceStatus m_status;
+};
 
-QMediaServiceProviderHint::Features WMFServicePlugin::supportedFeatures(
-        const QByteArray &service) const
-{
-    if (service == Q_MEDIASERVICE_MEDIAPLAYER)
-        return QMediaServiceProviderHint::StreamPlayback;
-    else
-        return QMediaServiceProviderHint::Features();
-}
-
-QList<QByteArray> WMFServicePlugin::devices(const QByteArray &) const
-{
-    return QList<QByteArray>();
-}
-
-QString WMFServicePlugin::deviceDescription(const QByteArray &, const QByteArray &)
-{
-    return QString();
-}
-
+#endif // RESOURCEPOLICYIMPL_H

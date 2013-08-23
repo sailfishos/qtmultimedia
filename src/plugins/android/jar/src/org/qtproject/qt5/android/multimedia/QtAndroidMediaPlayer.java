@@ -85,7 +85,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
         try {
             mApplicationContext = activity.getApplicationContext();
         } catch(final Exception e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
     }
 
@@ -104,7 +104,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
                     currentPosition = getCurrentPosition();
                 }
             } catch (final InterruptedException e) {
-                Log.d(TAG, e.getMessage());
+                Log.d(TAG, "" + e.getMessage());
                 return;
             }
         }
@@ -265,7 +265,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
             progressThread.start();
         } catch (final IllegalStateException e) {
             reset();
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
     }
 
@@ -279,7 +279,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
             super.pause();
         } catch (final IllegalStateException e) {
             reset();
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
     }
 
@@ -292,7 +292,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
         try {
             super.stop();
         } catch (final IllegalStateException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         } finally {
             reset();
         }
@@ -308,7 +308,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
             super.seekTo(msec);
             onMediaPlayerInfoNative(MEDIA_PLAYER_PROGRESS, msec, mID);
         } catch (final IllegalStateException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
     }
 
@@ -323,7 +323,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
         try {
             playing = super.isPlaying();
         } catch (final IllegalStateException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
 
         return playing;
@@ -358,13 +358,13 @@ public class QtAndroidMediaPlayer extends MediaPlayer
                           /* MEDIA_ERROR_UNSUPPORTED= */ -1010,
                           mID);
         } catch (final IllegalArgumentException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         } catch (final SecurityException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         } catch (final IllegalStateException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         } catch (final NullPointerException e) {
-            Log.d(TAG, e.getMessage());
+            Log.d(TAG, "" + e.getMessage());
         }
     }
 
@@ -379,7 +379,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
        try {
            currentPosition = super.getCurrentPosition();
        } catch (final IllegalStateException e) {
-           Log.d(TAG, e.getMessage());
+           Log.d(TAG, "" + e.getMessage());
        }
 
        return currentPosition;
@@ -396,7 +396,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
        try {
            duration = super.getDuration();
        } catch (final IllegalStateException e) {
-           Log.d(TAG, e.getMessage());
+           Log.d(TAG, "" + e.getMessage());
        }
 
        return duration;
@@ -428,7 +428,7 @@ public class QtAndroidMediaPlayer extends MediaPlayer
            if (!mMuted)
                mVolume = volume;
        } catch (final IllegalStateException e) {
-           Log.d(TAG, e.getMessage());
+           Log.d(TAG, "" + e.getMessage());
        }
    }
 

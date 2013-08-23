@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2013 Jolla Ltd, author: <robin.burchell@jollamobile.com>
 ** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
@@ -39,79 +40,25 @@
 **
 ****************************************************************************/
 
-#include <QtCore/qstring.h>
-#include <QtCore/qdebug.h>
-#include <QtCore/QFile>
+#include <QDebug>
 
-#include "wmfserviceplugin.h"
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-#include "mfplayerservice.h"
-#endif
-#include "mfdecoderservice.h"
+#include "resourcepolicyplugin.h"
+#include "resourcepolicyimpl.h"
 
-#include <mfapi.h>
-
-namespace
+ResourcePolicyPlugin::ResourcePolicyPlugin(QObject *parent)
+    : QMediaResourcePolicyPlugin(parent)
 {
-static int g_refCount = 0;
-void addRefCount()
-{
-    g_refCount++;
-    if (g_refCount == 1) {
-        CoInitialize(NULL);
-        MFStartup(MF_VERSION);
-    }
 }
 
-void releaseRefCount()
+QObject *ResourcePolicyPlugin::create(const QString &interfaceId)
 {
-    g_refCount--;
-    if (g_refCount == 0) {
-        MFShutdown();
-        CoUninitialize();
-    }
+    // TODO: what is interfaceId for?
+    return new ResourcePolicyImpl(this);
 }
 
-}
-
-QMediaService* WMFServicePlugin::create(QString const& key)
+void ResourcePolicyPlugin::destroy(QObject *resourceSet)
 {
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER)) {
-        addRefCount();
-        return new MFPlayerService;
-    }
-#endif
-    if (key == QLatin1String(Q_MEDIASERVICE_AUDIODECODER)) {
-        addRefCount();
-        return new MFAudioDecoderService;
-    }
-    //qDebug() << "unsupported key:" << key;
-    return 0;
-}
-
-void WMFServicePlugin::release(QMediaService *service)
-{
-    delete service;
-    releaseRefCount();
-}
-
-QMediaServiceProviderHint::Features WMFServicePlugin::supportedFeatures(
-        const QByteArray &service) const
-{
-    if (service == Q_MEDIASERVICE_MEDIAPLAYER)
-        return QMediaServiceProviderHint::StreamPlayback;
-    else
-        return QMediaServiceProviderHint::Features();
-}
-
-QList<QByteArray> WMFServicePlugin::devices(const QByteArray &) const
-{
-    return QList<QByteArray>();
-}
-
-QString WMFServicePlugin::deviceDescription(const QByteArray &, const QByteArray &)
-{
-    return QString();
+    // TODO: do we need to do anything more elaborate here?
+    delete resourceSet;
 }
 

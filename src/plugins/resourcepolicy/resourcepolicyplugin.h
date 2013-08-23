@@ -1,5 +1,6 @@
 /****************************************************************************
 **
+** Copyright (C) 2013 Jolla Ltd, author: <robin.burchell@jollamobile.com>
 ** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
 ** Contact: http://www.qt-project.org/legal
 **
@@ -39,79 +40,22 @@
 **
 ****************************************************************************/
 
-#include <QtCore/qstring.h>
-#include <QtCore/qdebug.h>
-#include <QtCore/QFile>
+#ifndef RESOURCEPOLICYPLUGIN_H
+#define RESOURCEPOLICYPLUGIN_H
 
-#include "wmfserviceplugin.h"
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-#include "mfplayerservice.h"
-#endif
-#include "mfdecoderservice.h"
+#include <private/qmediaresourcepolicyplugin_p.h>
+#include <QObject>
 
-#include <mfapi.h>
-
-namespace
+class ResourcePolicyPlugin : public QMediaResourcePolicyPlugin
 {
-static int g_refCount = 0;
-void addRefCount()
-{
-    g_refCount++;
-    if (g_refCount == 1) {
-        CoInitialize(NULL);
-        MFStartup(MF_VERSION);
-    }
-}
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.qt-project.qt.mediaresourcesetfactory/5.0" FILE "resourcepolicy.json")
+    Q_INTERFACES(QMediaResourceSetFactoryInterface)
+public:
+    ResourcePolicyPlugin(QObject *parent = 0);
 
-void releaseRefCount()
-{
-    g_refCount--;
-    if (g_refCount == 0) {
-        MFShutdown();
-        CoUninitialize();
-    }
-}
+    QObject *create(const QString &interfaceId);
+    void destroy(QObject *resourceSet);
+};
 
-}
-
-QMediaService* WMFServicePlugin::create(QString const& key)
-{
-#ifdef QMEDIA_MEDIAFOUNDATION_PLAYER
-    if (key == QLatin1String(Q_MEDIASERVICE_MEDIAPLAYER)) {
-        addRefCount();
-        return new MFPlayerService;
-    }
-#endif
-    if (key == QLatin1String(Q_MEDIASERVICE_AUDIODECODER)) {
-        addRefCount();
-        return new MFAudioDecoderService;
-    }
-    //qDebug() << "unsupported key:" << key;
-    return 0;
-}
-
-void WMFServicePlugin::release(QMediaService *service)
-{
-    delete service;
-    releaseRefCount();
-}
-
-QMediaServiceProviderHint::Features WMFServicePlugin::supportedFeatures(
-        const QByteArray &service) const
-{
-    if (service == Q_MEDIASERVICE_MEDIAPLAYER)
-        return QMediaServiceProviderHint::StreamPlayback;
-    else
-        return QMediaServiceProviderHint::Features();
-}
-
-QList<QByteArray> WMFServicePlugin::devices(const QByteArray &) const
-{
-    return QList<QByteArray>();
-}
-
-QString WMFServicePlugin::deviceDescription(const QByteArray &, const QByteArray &)
-{
-    return QString();
-}
-
+#endif // RESOURCEPOLICYPLUGIN_H

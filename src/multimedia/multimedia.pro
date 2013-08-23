@@ -58,7 +58,11 @@ ANDROID_JAR_DEPENDENCIES = \
     jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtMultimediaUtils \
     jar/QtMultimedia.jar:org.qtproject.qt5.android.multimedia.QtActivityStateListener
 ANDROID_LIB_DEPENDENCIES = \
-    plugins/mediaservice/libqtmedia_android.so
+    plugins/mediaservice/libqtmedia_android.so \
+    lib/libQt5MultimediaQuick_p.so:Qt5Quick
+ANDROID_BUNDLED_FILES += \
+    lib/libQt5MultimediaQuick_p.so
+
 MODULE_PLUGIN_TYPES = \
     mediaservice
 

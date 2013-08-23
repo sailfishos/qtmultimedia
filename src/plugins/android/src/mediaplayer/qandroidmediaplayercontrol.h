@@ -113,6 +113,7 @@ private:
     bool mMediaPlayerReady;
     QMediaPlayer::State mPendingState;
     qint64 mPendingPosition;
+    bool mPendingSetMedia;
 
     void setState(QMediaPlayer::State state);
     void setMediaStatus(QMediaPlayer::MediaStatus status);

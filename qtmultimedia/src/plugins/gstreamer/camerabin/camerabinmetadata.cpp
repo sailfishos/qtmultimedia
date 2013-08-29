@@ -121,6 +121,8 @@ static const QGstreamerMetaDataKeyLookup qt_gstreamerMetaDataKeys[] =
     //{ QMediaMetaData::CameraModel, 0 },
     //{ QMediaMetaData::Event, 0 },
     //{ QMediaMetaData::Subject, 0 }
+
+    { QMediaMetaData::Orientation, GST_TAG_IMAGE_ORIENTATION }
 };
 
 CameraBinMetaData::CameraBinMetaData(QObject *parent)

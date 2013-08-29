@@ -914,6 +914,7 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
                             emit stateChanged(m_state = QCamera::UnloadedState);
                         break;
                     case GST_STATE_READY:
+                        setMetaData(m_metaData);
                         if (m_state != QCamera::LoadedState)
                             emit stateChanged(m_state = QCamera::LoadedState);
                         break;

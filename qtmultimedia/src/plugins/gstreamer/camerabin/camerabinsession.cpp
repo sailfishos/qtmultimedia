@@ -261,7 +261,7 @@ bool CameraBinSession::setupCameraBin()
     return true;
 }
 
-static GstCaps *resolutionToCaps(const QSize &resolution,
+static GstCaps *resolutionToCaps(const QSize &resolution, int rotation = -1,
                                   const QPair<int, int> &rate = qMakePair<int,int>(0,0))
 {
     if (resolution.isEmpty())
@@ -273,50 +273,60 @@ static GstCaps *resolutionToCaps(const QSize &resolution,
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                    NULL),
                                  gst_structure_new("video/x-raw-rgb",
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                    NULL),
                                  gst_structure_new("video/x-raw-data",
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                    NULL),
                                  gst_structure_new("image/jpeg",
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                    NULL),
                                  NULL);
     } else {
         caps = gst_caps_new_full (gst_structure_new ("video/x-raw-yuv",
                                                      "width", G_TYPE_INT, resolution.width(),
                                                      "height", G_TYPE_INT, resolution.height(),
+                                                     rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                      NULL),
                                   gst_structure_new ("video/x-raw-rgb",
                                                      "width", G_TYPE_INT, resolution.width(),
                                                      "height", G_TYPE_INT, resolution.height(),
+                                                     rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                      NULL),
                                   gst_structure_new("video/x-raw-data",
                                                     "width", G_TYPE_INT, resolution.width(),
                                                     "height", G_TYPE_INT, resolution.height(),
+                                                    rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                     NULL),
                                   gst_structure_new ("image/jpeg",
                                                      "width", G_TYPE_INT, resolution.width(),
                                                      "height", G_TYPE_INT, resolution.height(),
+                                                     rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                      NULL),
                                   NULL);
     }
+
     return caps;
 }
 
 void CameraBinSession::setupCaptureResolution()
 {
     QSize resolution = m_imageEncodeControl->imageSettings().resolution();
+    QVariant rotation = m_imageEncodeControl->imageSettings().encodingOption(QLatin1String("rotation"));
     if (!resolution.isEmpty()) {
-        GstCaps *caps = resolutionToCaps(resolution);
+        GstCaps *caps = resolutionToCaps(resolution, rotation.isValid() ? rotation.toInt() : -1);
 #if CAMERABIN_DEBUG
         qDebug() << Q_FUNC_INFO << "set image resolution" << resolution << gst_caps_to_string(caps);
 #endif
@@ -327,9 +337,10 @@ void CameraBinSession::setupCaptureResolution()
     }
 
     resolution = m_videoEncodeControl->actualVideoSettings().resolution();
+    rotation = m_imageEncodeControl->imageSettings().encodingOption(QLatin1String("rotation"));
     //qreal framerate = m_videoEncodeControl->videoSettings().frameRate();
     if (!resolution.isEmpty()) {
-        GstCaps *caps = resolutionToCaps(resolution /*, framerate*/); //convert to rational
+        GstCaps *caps = resolutionToCaps(resolution, rotation.isValid() ? rotation.toInt() : -1 /*, framerate*/); //convert to rational
 #if CAMERABIN_DEBUG
         qDebug() << Q_FUNC_INFO << "set video resolution" << resolution << gst_caps_to_string(caps);
 #endif
@@ -903,6 +914,7 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
                             emit stateChanged(m_state = QCamera::UnloadedState);
                         break;
                     case GST_STATE_READY:
+                        setMetaData(m_metaData);
                         if (m_state != QCamera::LoadedState)
                             emit stateChanged(m_state = QCamera::LoadedState);
                         break;

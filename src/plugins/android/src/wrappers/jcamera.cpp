@@ -111,7 +111,7 @@ JCamera::JCamera(int cameraId, jobject cam)
     , m_parameters(0)
     , m_hasAPI14(false)
 {
-    if (m_jobject) {
+    if (isValid()) {
         g_objectMap.insert(cameraId, this);
 
         m_info = new QJNIObject("android/hardware/Camera$CameraInfo");
@@ -145,7 +145,7 @@ JCamera::JCamera(int cameraId, jobject cam)
 
 JCamera::~JCamera()
 {
-    if (m_jobject)
+    if (isValid())
         g_objectMap.remove(m_cameraId);
     delete m_parameters;
     delete m_info;

@@ -69,7 +69,7 @@ JMediaRecorder::JMediaRecorder()
     , QJNIObject(g_qtMediaRecorderClass, "(J)V", reinterpret_cast<jlong>(this))
     , m_id(reinterpret_cast<jlong>(this))
 {
-    if (m_jobject)
+    if (isValid())
         g_objectMap.insert(m_id, this);
 }
 

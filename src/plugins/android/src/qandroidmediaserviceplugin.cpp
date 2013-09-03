@@ -49,7 +49,6 @@
 #include "jsurfacetexture.h"
 #include "jsurfacetextureholder.h"
 #include "jcamera.h"
-#include "jactivitystatelistener.h"
 #include "jmultimediautils.h"
 #include "jmediarecorder.h"
 #include <qdebug.h>
@@ -139,7 +138,6 @@ Q_DECL_EXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void * /*reserved*/)
         !JSurfaceTexture::initJNI(jniEnv) ||
         !JSurfaceTextureHolder::initJNI(jniEnv) ||
         !JCamera::initJNI(jniEnv) ||
-        !JActivityStateListener::initJNI(jniEnv) ||
         !JMultimediaUtils::initJNI(jniEnv) ||
         !JMediaRecorder::initJNI(jniEnv)) {
         return JNI_ERR;

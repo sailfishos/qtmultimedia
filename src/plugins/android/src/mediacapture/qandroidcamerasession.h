@@ -50,7 +50,6 @@
 QT_BEGIN_NAMESPACE
 
 class JCamera;
-class JActivityStateListener;
 class QAndroidVideoOutput;
 
 class QAndroidCameraSession : public QObject
@@ -111,8 +110,7 @@ Q_SIGNALS:
     void imageCaptureError(int id, int error, const QString &errorString);
 
 private Q_SLOTS:
-    void onActivityPaused();
-    void onActivityResumed();
+    void onApplicationStateChanged(Qt::ApplicationState state);
 
     void onCameraPictureExposed();
     void onCameraPictureCaptured(const QByteArray &data);
@@ -135,8 +133,6 @@ private:
     JCamera *m_camera;
     int m_nativeOrientation;
     QAndroidVideoOutput *m_videoOutput;
-
-    JActivityStateListener *m_activityListener;
 
     QCamera::CaptureModes m_captureMode;
     QCamera::State m_state;

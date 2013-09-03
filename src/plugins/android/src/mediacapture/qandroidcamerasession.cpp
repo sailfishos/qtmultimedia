@@ -42,12 +42,12 @@
 #include "qandroidcamerasession.h"
 
 #include "jcamera.h"
-#include "jactivitystatelistener.h"
 #include "jmultimediautils.h"
 #include "qandroidvideooutput.h"
 #include "qandroidmultimediautils.h"
 #include <QtConcurrent/qtconcurrentrun.h>
 #include <qfile.h>
+#include <qguiapplication.h>
 #include <qdebug.h>
 
 QT_BEGIN_NAMESPACE
@@ -77,15 +77,15 @@ QAndroidCameraSession::QAndroidCameraSession(QObject *parent)
     , m_captureCanceled(false)
     , m_currentImageCaptureId(-1)
 {
-    m_activityListener = new JActivityStateListener;
-    connect(m_activityListener, SIGNAL(paused()), this, SLOT(onActivityPaused()));
-    connect(m_activityListener, SIGNAL(resumed()), this, SLOT(onActivityResumed()));
+    if (qApp) {
+        connect(qApp, SIGNAL(applicationStateChanged(Qt::ApplicationState)),
+                this, SLOT(onApplicationStateChanged(Qt::ApplicationState)));
+    }
 }
 
 QAndroidCameraSession::~QAndroidCameraSession()
 {
     close();
-    delete m_activityListener;
 }
 
 void QAndroidCameraSession::setCaptureMode(QCamera::CaptureModes mode)
@@ -110,6 +110,13 @@ bool QAndroidCameraSession::isCaptureModeSupported(QCamera::CaptureModes mode) c
 
 void QAndroidCameraSession::setState(QCamera::State state)
 {
+    // If the application is inactive, the camera shouldn't be started. Save the desired state
+    // instead and it will be set when the application becomes active.
+    if (qApp->applicationState() != Qt::ApplicationActive) {
+        m_savedState = state;
+        return;
+    }
+
     if (m_state == state)
         return;
 
@@ -521,17 +528,25 @@ void QAndroidCameraSession::onSurfaceTextureReady()
         m_camera->setPreviewTexture(m_videoOutput->surfaceTexture());
 }
 
-void QAndroidCameraSession::onActivityPaused()
+void QAndroidCameraSession::onApplicationStateChanged(Qt::ApplicationState state)
 {
-    m_savedState = m_state;
-    setState(QCamera::UnloadedState);
-}
-
-void QAndroidCameraSession::onActivityResumed()
-{
-    if (m_savedState != -1) {
-        setState(QCamera::State(m_savedState));
-        m_savedState = -1;
+    switch (state) {
+    case Qt::ApplicationInactive:
+        if (m_state != QCamera::UnloadedState) {
+            m_savedState = m_state;
+            close();
+            m_state = QCamera::UnloadedState;
+            emit stateChanged(m_state);
+        }
+        break;
+    case Qt::ApplicationActive:
+        if (m_savedState != -1) {
+            setState(QCamera::State(m_savedState));
+            m_savedState = -1;
+        }
+        break;
+    default:
+        break;
     }
 }
 

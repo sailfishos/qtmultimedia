@@ -66,9 +66,6 @@ ANDROID_BUNDLED_FILES += \
 MODULE_PLUGIN_TYPES = \
     mediaservice
 
-mac {
-   LIBS += -framework AppKit -framework QuartzCore -framework QTKit
-}
 win32:LIBS += -luuid
 
 HEADERS += $$PUBLIC_HEADERS $$PRIVATE_HEADERS

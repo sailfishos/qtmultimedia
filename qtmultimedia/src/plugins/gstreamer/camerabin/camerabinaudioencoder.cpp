@@ -106,6 +106,7 @@ void CameraBinAudioEncoder::resetActualSettings()
 GstEncodingProfile *CameraBinAudioEncoder::createProfile()
 {
     QString codec = m_actualAudioSettings.codec();
+    QString preset = m_actualAudioSettings.encodingOption(QStringLiteral("preset")).toString();
     GstCaps *caps;
 
     if (codec.isEmpty())
@@ -115,7 +116,7 @@ GstEncodingProfile *CameraBinAudioEncoder::createProfile()
 
     return (GstEncodingProfile *)gst_encoding_audio_profile_new(
                                         caps,
-                                        NULL, //preset
+                                        !preset.isEmpty() ? preset.toUtf8().constData() : NULL,	//preset
                                         NULL, //restriction
                                         0); //presence
 }

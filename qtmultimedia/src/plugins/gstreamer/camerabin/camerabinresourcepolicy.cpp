@@ -112,17 +112,13 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
         break;
     case LoadedResources:
         requestedTypes << ResourcePolicy::LensCoverType //to detect lens cover is opened/closed
-                       << ResourcePolicy::VideoRecorderType //to open camera device
-                       << ResourcePolicy::SnapButtonType; //to detect capture button events
+                       << ResourcePolicy::VideoRecorderType; //to open camera device
         break;
     case ImageCaptureResources:
         requestedTypes << ResourcePolicy::LensCoverType
                        << ResourcePolicy::VideoPlaybackType
                        << ResourcePolicy::VideoRecorderType
-                       << ResourcePolicy::AudioPlaybackType
-                       << ResourcePolicy::ScaleButtonType
-                       << ResourcePolicy::LedsType
-                       << ResourcePolicy::SnapButtonType;
+                       << ResourcePolicy::LedsType;
         break;
     case VideoCaptureResources:
         requestedTypes << ResourcePolicy::LensCoverType
@@ -130,9 +126,7 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
                        << ResourcePolicy::VideoRecorderType
                        << ResourcePolicy::AudioPlaybackType
                        << ResourcePolicy::AudioRecorderType
-                       << ResourcePolicy::ScaleButtonType
-                       << ResourcePolicy::LedsType
-                       << ResourcePolicy::SnapButtonType;
+                       << ResourcePolicy::LedsType;
         break;
     }
 

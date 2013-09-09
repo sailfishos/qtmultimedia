@@ -203,6 +203,7 @@ private:
 
     QCamera::CaptureModes m_captureMode;
     QMap<QByteArray, QVariant> m_metaData;
+    QByteArray m_sourceElementName;
 
     QGstreamerElementFactory *m_audioInputFactory;
     QGstreamerElementFactory *m_videoInputFactory;

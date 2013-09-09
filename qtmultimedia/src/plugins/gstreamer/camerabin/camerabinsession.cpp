@@ -356,26 +356,27 @@ GstElement *CameraBinSession::buildCameraSource()
 #if CAMERABIN_DEBUG
     qDebug() << Q_FUNC_INFO;
 #endif
-    GstElement *videoSrc = 0;
+    GstElement *videoSrc = m_sourceElementName != "wrappercamerabinsrc" ? m_videoSrc : 0;
 
-    QList<QByteArray> candidates;
-    QByteArray envCandidate = qgetenv("QT_GSTREAMER_CAMERABIN_SRC");
-    if (!envCandidate.isEmpty())
-        candidates << envCandidate;
-    candidates << "subdevsrc" << "wrappercamerabinsrc";
-    QByteArray sourceElementName;
+    if (!videoSrc) {
+        QList<QByteArray> candidates;
+        QByteArray envCandidate = qgetenv("QT_GSTREAMER_CAMERABIN_SRC");
+        if (!envCandidate.isEmpty())
+            candidates << envCandidate;
+        candidates << "subdevsrc" << "wrappercamerabinsrc";
 
-    foreach (sourceElementName, candidates) {
-        videoSrc = gst_element_factory_make(sourceElementName.constData(), "camera_source");
-        if (videoSrc)
-            break;
+        foreach (m_sourceElementName, candidates) {
+            videoSrc = gst_element_factory_make(m_sourceElementName.constData(), "camera_source");
+            if (videoSrc)
+                break;
+        }
     }
 
     if (videoSrc && !m_inputDevice.isEmpty()) {
 #if CAMERABIN_DEBUG
         qDebug() << "set camera device" << m_inputDevice;
 #endif
-        if (sourceElementName == "wrappercamerabinsrc") {
+        if (m_sourceElementName == "wrappercamerabinsrc") {
             GstElement *src = 0;
 
             if (m_videoInputFactory)

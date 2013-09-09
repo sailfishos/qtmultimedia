@@ -69,6 +69,8 @@ CamerabinResourcePolicy::CamerabinResourcePolicy(QObject *parent) :
     connect(m_resource, SIGNAL(resourcesDenied()), SIGNAL(resourcesDenied()));
     connect(m_resource, SIGNAL(lostResources()), SIGNAL(resourcesLost()));
     connect(m_resource, SIGNAL(resourcesReleased()), SLOT(handleResourcesReleased()));
+    connect(m_resource, SIGNAL(resourcesBecameAvailable(QList<ResourcePolicy::ResourceType>)),
+            this, SLOT(resourcesAvailable()));
 #endif
 }
 
@@ -178,6 +180,15 @@ void CamerabinResourcePolicy::handleResourcesReleased()
     qDebug() << Q_FUNC_INFO;
 #endif
     m_releasingResources = false;
+#endif
+}
+
+void CamerabinResourcePolicy::resourcesAvailable()
+{
+#ifdef HAVE_RESOURCE_POLICY
+    if (m_resourceSet != NoResources) {
+        m_resource->acquire();
+    }
 #endif
 }
 

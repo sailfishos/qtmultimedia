@@ -76,6 +76,7 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void handleResourcesReleased();
+    void resourcesAvailable();
 
 private:
     ResourceSet m_resourceSet;

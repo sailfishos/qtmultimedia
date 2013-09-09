@@ -103,10 +103,7 @@ void CameraBinFocus::setFocusMode(QCameraFocus::FocusModes mode)
     }
 
     if (gst_photography_set_focus_mode(m_session->photography(), photographyMode)) {
-        qDebug() << "Focus mode set to" << photographyMode;
         m_focusMode = mode;
-    } else {
-        qDebug() << "Focus mode not set to" << photographyMode;
     }
 }
 

@@ -189,10 +189,6 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
         g_signal_connect(G_OBJECT(m_playbin), "notify::source", G_CALLBACK(playbinNotifySource), this);
         g_signal_connect(G_OBJECT(m_playbin), "element-added",  G_CALLBACK(handleElementAdded), this);
 
-        // Init volume and mute state
-        g_object_set(G_OBJECT(m_playbin), "volume", 1.0, NULL);
-        g_object_set(G_OBJECT(m_playbin), "mute", FALSE, NULL);
-
         g_signal_connect(G_OBJECT(m_playbin), "notify::volume", G_CALLBACK(handleVolumeChange), this);
         g_signal_connect(G_OBJECT(m_playbin), "notify::mute", G_CALLBACK(handleMutedChange), this);
 

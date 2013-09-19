@@ -39,14 +39,37 @@
 **
 ****************************************************************************/
 
-#include "qgstreamerelementcontrol_p.h"
+#ifndef QCAMERASENSORCONTROL_P_H
+#define QCAMERASENSORCONTROL_P_H
 
+#include <QtMultimedia/qmediacontrol.h>
 
-QGStreamerElementControl::QGStreamerElementControl(QObject *parent)
-    : QMediaControl(parent)
+QT_BEGIN_NAMESPACE
+
+class Q_MULTIMEDIA_EXPORT QCameraSensorControl : public QMediaControl
 {
-}
+    Q_OBJECT
+public:
+    enum Property
+    {
+        Orientation
+    };
 
-QGStreamerElementControl::~QGStreamerElementControl()
-{
-}
+    virtual ~QCameraSensorControl();
+
+    virtual QVariant property(Property property) const = 0;
+    virtual void setProperty(Property property, const QVariant &value) = 0;
+
+Q_SIGNALS:
+    void propertyChanged(Property property);
+
+protected:
+    QCameraSensorControl(QObject *parent = 0);
+};
+
+#define QCameraSensorControl_iid "org.qt-project.qt.qcamerasensorcontrol/5.0"
+Q_MEDIA_DECLARE_CONTROL(QCameraSensorControl, QCameraSensorControl_iid)
+
+QT_END_NAMESPACE
+
+#endif

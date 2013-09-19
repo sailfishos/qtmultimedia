@@ -29,7 +29,8 @@ HEADERS += \
     $$PWD/camerabinvideoencoder.h \
     $$PWD/camerabinresourcepolicy.h \
     $$PWD/camerabincapturedestination.h \
-    $$PWD/camerabincapturebufferformat.h
+    $$PWD/camerabincapturebufferformat.h \
+    $$PWD/camerabinsensor.h
 
 SOURCES += \
     $$PWD/camerabinserviceplugin.cpp \
@@ -46,7 +47,8 @@ SOURCES += \
     $$PWD/camerabinvideoencoder.cpp \
     $$PWD/camerabinresourcepolicy.cpp \
     $$PWD/camerabincapturedestination.cpp \
-    $$PWD/camerabincapturebufferformat.cpp
+    $$PWD/camerabincapturebufferformat.cpp \
+    $$PWD/camerabinsensor.cpp
 
 maemo6 {
     HEADERS += \

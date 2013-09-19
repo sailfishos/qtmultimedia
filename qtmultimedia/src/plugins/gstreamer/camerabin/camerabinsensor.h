@@ -39,14 +39,33 @@
 **
 ****************************************************************************/
 
-#include "qgstreamerelementcontrol_p.h"
+#ifndef CAMERABINSENSORCONTROL_H
+#define CAMERABINSENSORCONTROL_H
 
+#include <private/qcamerasensorcontrol_p.h>
+#include <QtMultimedia/qcamera.h>
 
-QGStreamerElementControl::QGStreamerElementControl(QObject *parent)
-    : QMediaControl(parent)
+QT_BEGIN_NAMESPACE
+
+class CameraBinSession;
+
+class CameraBinSensor : public QCameraSensorControl
 {
-}
+public:
+    CameraBinSensor(CameraBinSession *session);
 
-QGStreamerElementControl::~QGStreamerElementControl()
-{
-}
+    QVariant property(Property property) const;
+    void setProperty(Property property, const QVariant &value);
+
+private slots:
+    void sessionStateChanged(QCamera::State state);
+
+private:
+    CameraBinSession *m_session;
+    int m_orientation;
+};
+
+
+QT_END_NAMESPACE
+
+#endif

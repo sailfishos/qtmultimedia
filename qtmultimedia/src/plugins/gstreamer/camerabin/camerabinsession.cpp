@@ -54,6 +54,7 @@
 #endif
 
 #include "camerabinimageprocessing.h"
+#include "camerabinsensor.h"
 
 #include "camerabincapturedestination.h"
 #include "camerabincapturebufferformat.h"
@@ -169,6 +170,7 @@ CameraBinSession::CameraBinSession(QObject *parent)
     m_imageProcessingControl = new CameraBinImageProcessing(this);
     m_captureDestinationControl = new CameraBinCaptureDestination(this);
     m_captureBufferFormatControl = new CameraBinCaptureBufferFormat(this);
+    m_sensorControl = new CameraBinSensor(this);
 
     g_object_set(G_OBJECT(m_camerabin), "flags", 0x00000001 | 0x00000002 | 0x00000004 | 0x00000008, NULL);
 
@@ -1237,6 +1239,14 @@ QList<QSize> CameraBinSession::supportedResolutions(QPair<int,int> rate,
         *continuous = isContinuous;
 
     return res;
+}
+
+int CameraBinSession::sensorOrientation() const
+{
+    gint orientation = 0;
+    if (m_videoSrc)
+        g_object_get(m_videoSrc, "sensor-mount-angle", &orientation, NULL);
+    return orientation >= 0 ? orientation : 0;
 }
 
 QT_END_NAMESPACE

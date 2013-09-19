@@ -39,14 +39,13 @@
 **
 ****************************************************************************/
 
-#include "qgstreamerelementcontrol_p.h"
+#include "qcamerasensorcontrol_p.h"
 
-
-QGStreamerElementControl::QGStreamerElementControl(QObject *parent)
+QCameraSensorControl::QCameraSensorControl(QObject *parent)
     : QMediaControl(parent)
 {
 }
 
-QGStreamerElementControl::~QGStreamerElementControl()
+QCameraSensorControl::~QCameraSensorControl()
 {
 }

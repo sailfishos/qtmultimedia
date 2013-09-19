@@ -39,14 +39,36 @@
 **
 ****************************************************************************/
 
-#include "qgstreamerelementcontrol_p.h"
+#include "camerabinsensor.h"
+#include "camerabinsession.h"
 
+CameraBinSensor::CameraBinSensor(CameraBinSession *session)
+    : QCameraSensorControl(session)
+    , m_session(session)
+    , m_orientation(0)
+{
+    connect(m_session, &CameraBinSession::stateChanged, this, &CameraBinSensor::sessionStateChanged);
+}
 
-QGStreamerElementControl::QGStreamerElementControl(QObject *parent)
-    : QMediaControl(parent)
+QVariant CameraBinSensor::property(Property property) const
+{
+    switch (property) {
+    case Orientation:
+        return m_orientation;
+    default:
+        return QVariant();
+    }
+}
+
+void CameraBinSensor::setProperty(Property, const QVariant &)
 {
 }
 
-QGStreamerElementControl::~QGStreamerElementControl()
+void CameraBinSensor::sessionStateChanged(QCamera::State)
 {
+    const int orientation = m_session->sensorOrientation();
+    if (orientation != m_orientation) {
+        m_orientation = orientation;
+        emit propertyChanged(Orientation);
+    }
 }

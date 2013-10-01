@@ -47,6 +47,7 @@
 #include <QtCore/qsize.h>
 #include <QtQuick/qquickitem.h>
 #include <QtQuick/qsgnode.h>
+#include <private/qtmultimediaquickdefs_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -54,7 +55,7 @@ class QAbstractVideoSurface;
 class QDeclarativeVideoOutput;
 class QMediaService;
 
-class QDeclarativeVideoBackend
+class Q_MULTIMEDIAQUICK_EXPORT QDeclarativeVideoBackend
 {
 public:
     explicit QDeclarativeVideoBackend(QDeclarativeVideoOutput *parent)
@@ -81,6 +82,15 @@ protected:
     QDeclarativeVideoOutput *q;
     QPointer<QMediaService> m_service;
 };
+
+class QDeclarativeVideoBackendFactoryInterface
+{
+public:
+    virtual QDeclarativeVideoBackend *create(QDeclarativeVideoOutput *parent) = 0;
+};
+
+#define QDeclarativeVideoBackendFactoryInterface_iid "org.qt-project.qt.declarativevideobackendfactory/5.2"
+Q_DECLARE_INTERFACE(QDeclarativeVideoBackendFactoryInterface, QDeclarativeVideoBackendFactoryInterface_iid)
 
 /*
  * Helper - returns true if the given orientation has the same aspect as the default (e.g. 180*n)

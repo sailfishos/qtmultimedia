@@ -39,35 +39,68 @@
 **
 ****************************************************************************/
 
-#include "qgstreamervideosinkcontrol_p.h"
 
-#include <gst/gst.h>
+#include "camerabinviewfindersettings.h"
 
-QGStreamerVideoSinkControl::QGStreamerVideoSinkControl(QObject *parent)
-    : QGStreamerElementControl(parent)
-    , m_videoSink(0)
+
+QT_BEGIN_NAMESPACE
+
+CameraBinViewfinderSettings::CameraBinViewfinderSettings(QObject *parent)
+    : QCameraViewfinderSettingsControl(parent)
 {
 }
 
-QGStreamerVideoSinkControl::~QGStreamerVideoSinkControl()
+CameraBinViewfinderSettings::~CameraBinViewfinderSettings()
 {
-    if (m_videoSink)
-        gst_object_unref(GST_OBJECT(m_videoSink));
 }
 
-GstElement *QGStreamerVideoSinkControl::videoSink()
+bool CameraBinViewfinderSettings::isViewfinderParameterSupported(ViewfinderParameter parameter) const
 {
-    return m_videoSink;
+    switch (parameter) {
+    case Resolution:
+        return true;
+    case PixelAspectRatio:
+    case MinimumFrameRate:
+    case MaximumFrameRate:
+    case PixelFormat:
+    case UserParameter:
+        return false;
+    }
+    return false;
 }
 
-void QGStreamerVideoSinkControl::setElement(GstElement *element)
+QVariant CameraBinViewfinderSettings::viewfinderParameter(ViewfinderParameter parameter) const
 {
-    if (m_videoSink != element) {
-        if (m_videoSink)
-            gst_object_unref(GST_OBJECT(m_videoSink));
-        m_videoSink = element;
-        if (m_videoSink)
-            gst_object_ref(GST_OBJECT(element));
-        emit sinkChanged();
+    switch (parameter) {
+    case Resolution:
+        return m_resolution;
+    case PixelAspectRatio:
+    case MinimumFrameRate:
+    case MaximumFrameRate:
+    case PixelFormat:
+    case UserParameter:
+        return QVariant();
+    }
+    return false;
+}
+
+void CameraBinViewfinderSettings::setViewfinderParameter(ViewfinderParameter parameter, const QVariant &value)
+{
+    switch (parameter) {
+    case Resolution:
+        m_resolution = value.toSize();
+    case PixelAspectRatio:
+    case MinimumFrameRate:
+    case MaximumFrameRate:
+    case PixelFormat:
+    case UserParameter:
+        break;
     }
 }
+
+QSize CameraBinViewfinderSettings::resolution() const
+{
+    return m_resolution;
+}
+
+QT_END_NAMESPACE

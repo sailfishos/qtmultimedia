@@ -39,35 +39,32 @@
 **
 ****************************************************************************/
 
-#include "qgstreamervideosinkcontrol_p.h"
+#ifndef CAMERABINVIEWFINDERSETTINGS_H
+#define CAMERABINVIEWFINDERSETTINGS_H
 
-#include <gst/gst.h>
+#include <qcameraviewfindersettingscontrol.h>
 
-QGStreamerVideoSinkControl::QGStreamerVideoSinkControl(QObject *parent)
-    : QGStreamerElementControl(parent)
-    , m_videoSink(0)
+QT_BEGIN_NAMESPACE
+
+#include <QtCore/qsize.h>
+
+class CameraBinViewfinderSettings : public QCameraViewfinderSettingsControl
 {
-}
+    Q_OBJECT
+public:
+    CameraBinViewfinderSettings(QObject *parent);
+    ~CameraBinViewfinderSettings();
 
-QGStreamerVideoSinkControl::~QGStreamerVideoSinkControl()
-{
-    if (m_videoSink)
-        gst_object_unref(GST_OBJECT(m_videoSink));
-}
+    bool isViewfinderParameterSupported(ViewfinderParameter parameter) const;
+    QVariant viewfinderParameter(ViewfinderParameter parameter) const;
+    void setViewfinderParameter(ViewfinderParameter parameter, const QVariant &value);
 
-GstElement *QGStreamerVideoSinkControl::videoSink()
-{
-    return m_videoSink;
-}
+    QSize resolution() const;
 
-void QGStreamerVideoSinkControl::setElement(GstElement *element)
-{
-    if (m_videoSink != element) {
-        if (m_videoSink)
-            gst_object_unref(GST_OBJECT(m_videoSink));
-        m_videoSink = element;
-        if (m_videoSink)
-            gst_object_ref(GST_OBJECT(element));
-        emit sinkChanged();
-    }
-}
+private:
+    QSize m_resolution;
+};
+
+QT_END_NAMESPACE
+
+#endif

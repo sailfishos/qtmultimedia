@@ -73,6 +73,7 @@ class CameraBinZoom;
 class CameraBinCaptureDestination;
 class CameraBinCaptureBufferFormat;
 class QGstreamerVideoRendererInterface;
+class CameraBinViewfinderSettings;
 class CameraBinSensor;
 
 class QGstreamerElementFactory
@@ -133,6 +134,7 @@ public:
     CameraBinImageProcessing *imageProcessingControl() const { return m_imageProcessingControl; }
     CameraBinCaptureDestination *captureDestinationControl() const { return m_captureDestinationControl; }
     CameraBinCaptureBufferFormat *captureBufferFormatControl() const { return m_captureBufferFormatControl; }
+    CameraBinViewfinderSettings *viewfinderSettingsControl() const { return m_viewfinderSettingsControl; }
     CameraBinSensor *sensorControl() const { return m_sensorControl; }
 
     CameraBinRecorder *recorderControl() const { return m_recorderControl; }
@@ -229,6 +231,7 @@ private:
     CameraBinImageProcessing *m_imageProcessingControl;
     CameraBinCaptureDestination *m_captureDestinationControl;
     CameraBinCaptureBufferFormat *m_captureBufferFormatControl;
+    CameraBinViewfinderSettings *m_viewfinderSettingsControl;
     CameraBinSensor *m_sensorControl;
 
     QGstreamerBusHelper *m_busHelper;

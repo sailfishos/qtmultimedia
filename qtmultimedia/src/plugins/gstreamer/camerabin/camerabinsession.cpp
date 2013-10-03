@@ -54,6 +54,7 @@
 #endif
 
 #include "camerabinimageprocessing.h"
+#include "camerabinviewfindersettings.h"
 #include "camerabinsensor.h"
 
 #include "camerabincapturedestination.h"
@@ -170,6 +171,7 @@ CameraBinSession::CameraBinSession(QObject *parent)
     m_imageProcessingControl = new CameraBinImageProcessing(this);
     m_captureDestinationControl = new CameraBinCaptureDestination(this);
     m_captureBufferFormatControl = new CameraBinCaptureBufferFormat(this);
+    m_viewfinderSettingsControl = new CameraBinViewfinderSettings(this);
     m_sensorControl = new CameraBinSensor(this);
 
     g_object_set(G_OBJECT(m_camerabin), "flags", 0x00000001 | 0x00000002 | 0x00000004 | 0x00000008, NULL);
@@ -289,6 +291,12 @@ static GstCaps *resolutionToCaps(const QSize &resolution, int rotation = -1,
                                                    "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
                                                    rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                    NULL),
+                                 gst_structure_new("video/x-android-buffer",
+                                                   "width", G_TYPE_INT, resolution.width(),
+                                                   "height", G_TYPE_INT, resolution.height(),
+                                                   "framerate", GST_TYPE_FRACTION, rate.first, rate.second,
+                                                   rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
+                                                   NULL),
                                  gst_structure_new("image/jpeg",
                                                    "width", G_TYPE_INT, resolution.width(),
                                                    "height", G_TYPE_INT, resolution.height(),
@@ -312,6 +320,11 @@ static GstCaps *resolutionToCaps(const QSize &resolution, int rotation = -1,
                                                     "height", G_TYPE_INT, resolution.height(),
                                                     rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
                                                     NULL),
+                                  gst_structure_new ("video/x-android-buffer",
+                                                     "width", G_TYPE_INT, resolution.width(),
+                                                     "height", G_TYPE_INT, resolution.height(),
+                                                     rotation >= 0 ? "rotation" : NULL, G_TYPE_INT, rotation,
+                                                     NULL),
                                   gst_structure_new ("image/jpeg",
                                                      "width", G_TYPE_INT, resolution.width(),
                                                      "height", G_TYPE_INT, resolution.height(),
@@ -350,6 +363,18 @@ void CameraBinSession::setupCaptureResolution()
         gst_caps_unref(caps);
     } else {
         g_object_set(m_camerabin, VIDEO_CAPTURE_CAPS_PROPERTY, NULL, NULL);
+    }
+
+    resolution = m_viewfinderSettingsControl->resolution();
+    if (!resolution.isEmpty()) {
+        GstCaps *caps = resolutionToCaps(resolution, -1);
+#if CAMERABIN_DEBUG
+        qDebug() << Q_FUNC_INFO << "set viewfinder resolution" << resolution << gst_caps_to_string(caps);
+#endif
+        g_object_set(m_camerabin, VIEWFINDER_CAPS_PROPERTY, caps, NULL);
+        gst_caps_unref(caps);
+    } else {
+        g_object_set(m_camerabin, VIEWFINDER_CAPS_PROPERTY, NULL, NULL);
     }
 }
 

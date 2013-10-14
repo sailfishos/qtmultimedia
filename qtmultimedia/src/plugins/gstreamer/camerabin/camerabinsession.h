@@ -193,6 +193,7 @@ private slots:
 private:
     bool setupCameraBin();
     void setupCaptureResolution();
+    void setAudioCaptureCaps();
     GstElement *buildCameraSource();
     static void updateBusyStatus(GObject *o, GParamSpec *p, gpointer d);
 

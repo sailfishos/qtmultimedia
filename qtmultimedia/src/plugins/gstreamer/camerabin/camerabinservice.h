@@ -80,7 +80,6 @@ private:
     void setAudioPreview(GstElement*);
 
     CameraBinSession *m_captureSession;
-    CameraBinControl *m_cameraControl;
     CameraBinMetaData *m_metaDataControl;
 
     QAudioInputSelectorControl *m_audioInputSelector;

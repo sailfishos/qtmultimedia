@@ -170,8 +170,8 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
     }
 #else
     Q_UNUSED(oldSet);
-    updateCanCapture();
 #endif
+    updateCanCapture();
 }
 
 bool CamerabinResourcePolicy::isResourcesGranted() const

@@ -77,6 +77,7 @@
 #include <QtGui/qdesktopservices.h>
 
 #include <QtGui/qimage.h>
+#include <QtCore/qdatetime.h>
 
 //#define CAMERABIN_DEBUG 1
 //#define CAMERABIN_DEBUG_DUMP_BIN 1
@@ -780,7 +781,7 @@ void CameraBinSession::setMetaData(const QMap<QByteArray, QVariant> &data)
                 switch(tagValue.type()) {
                     case QVariant::String:
                         gst_tag_setter_add_tags(GST_TAG_SETTER(element),
-                            GST_TAG_MERGE_REPLACE_ALL,
+                            GST_TAG_MERGE_REPLACE,
                             tagName.toUtf8().constData(),
                             tagValue.toString().toUtf8().constData(),
                             NULL);
@@ -788,18 +789,29 @@ void CameraBinSession::setMetaData(const QMap<QByteArray, QVariant> &data)
                     case QVariant::Int:
                     case QVariant::LongLong:
                         gst_tag_setter_add_tags(GST_TAG_SETTER(element),
-                            GST_TAG_MERGE_REPLACE_ALL,
+                            GST_TAG_MERGE_REPLACE,
                             tagName.toUtf8().constData(),
                             tagValue.toInt(),
                             NULL);
                         break;
                     case QVariant::Double:
                         gst_tag_setter_add_tags(GST_TAG_SETTER(element),
-                            GST_TAG_MERGE_REPLACE_ALL,
+                            GST_TAG_MERGE_REPLACE,
                             tagName.toUtf8().constData(),
                             tagValue.toDouble(),
                             NULL);
                         break;
+                    case QVariant::DateTime: {
+                        QDateTime date = tagValue.toDateTime();
+                        gst_tag_setter_add_tags(GST_TAG_SETTER(element),
+                            GST_TAG_MERGE_REPLACE,
+                            tagName.toUtf8().constData(),
+                            gst_date_time_new_local_time(
+                                        date.date().year(), date.date().month(), date.date().day(),
+                                        date.time().hour(), date.time().minute(), date.time().second()),
+                            NULL);
+                        break;
+                    }
                     default:
                         break;
                 }

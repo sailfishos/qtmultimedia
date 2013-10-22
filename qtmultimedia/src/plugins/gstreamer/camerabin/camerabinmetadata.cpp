@@ -60,6 +60,7 @@ static const QGstreamerMetaDataKeyLookup qt_gstreamerMetaDataKeys[] =
     //{ QMediaMetaData::SubTitle, 0 },
     //{ QMediaMetaData::Author, 0 },
     { QMediaMetaData::Comment, GST_TAG_COMMENT },
+    { QMediaMetaData::Date, GST_TAG_DATE_TIME },
     { QMediaMetaData::Description, GST_TAG_DESCRIPTION },
     //{ QMediaMetaData::Category, 0 },
     { QMediaMetaData::Genre, GST_TAG_GENRE },

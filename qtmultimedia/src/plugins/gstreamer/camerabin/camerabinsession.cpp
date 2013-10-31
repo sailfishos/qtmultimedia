@@ -1019,6 +1019,21 @@ void CameraBinSession::recordVideo()
         m_actualSink = QUrl::fromLocalFile(m_actualSink.toEncoded());
     }
 
+    if (GstPad *videoPad = gst_element_get_static_pad(m_videoSrc, "vidsrc")) {
+        int rotation = m_videoEncodeControl->actualVideoSettings().encodingOption(QStringLiteral("rotation")).toInt();
+        rotation = (-sensorOrientation() + rotation) %360;
+        if (rotation < 0)
+            rotation += 360;
+
+        GstTagList *tags = gst_tag_list_new();
+        gst_tag_list_add(
+                    tags,
+                    GST_TAG_MERGE_REPLACE,
+                    GST_TAG_IMAGE_ORIENTATION, ("rotate-" + QByteArray::number(rotation)).constData(),
+                    NULL);
+        gst_pad_push_event(videoPad, gst_event_new_tag(tags));
+    }
+
     QString fileName = m_actualSink.toLocalFile();
     g_object_set(G_OBJECT(m_camerabin), FILENAME_PROPERTY, QFile::encodeName(fileName).constData(), NULL);
 

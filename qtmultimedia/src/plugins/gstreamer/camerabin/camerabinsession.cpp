@@ -1019,6 +1019,8 @@ void CameraBinSession::recordVideo()
         m_actualSink = QUrl::fromLocalFile(m_actualSink.toEncoded());
     }
 
+    m_recorderControl->applySettings();
+
     if (GstPad *videoPad = gst_element_get_static_pad(m_videoSrc, "vidsrc")) {
         int rotation = m_videoEncodeControl->actualVideoSettings().encodingOption(QStringLiteral("rotation")).toInt();
         rotation = (-sensorOrientation() + rotation) %360;
@@ -1031,7 +1033,27 @@ void CameraBinSession::recordVideo()
                     GST_TAG_MERGE_REPLACE,
                     GST_TAG_IMAGE_ORIENTATION, ("rotate-" + QByteArray::number(rotation)).constData(),
                     NULL);
-        gst_pad_push_event(videoPad, gst_event_new_tag(tags));
+        GstEvent *event = gst_event_new_tag(tags);
+
+        // After a recording the video stream elements will have received an EOS event and be
+        // flushing, which means events aren't delivered.  So we'll find the muxer element and call
+        // the event function on each of its sink pads directly.
+        if (GstElement *bin = gst_bin_get_by_name(GST_BIN(m_camerabin), "video-encodebin")) {
+            if (GstElement *muxer = gst_bin_get_by_name(GST_BIN(bin), "muxer")) {
+                GstPad *pad;
+                GstIterator *pads = gst_element_iterate_sink_pads(muxer);
+                while (gst_iterator_next(pads, reinterpret_cast<void **>(&pad)) == GST_ITERATOR_OK) {
+                    gst_event_ref(event);
+                    GST_PAD_EVENTFUNC(pad)(pad, event);
+                }
+                gst_iterator_free(pads);
+                gst_object_unref(GST_OBJECT(muxer));
+            }
+            gst_object_unref(GST_OBJECT(bin));
+        }
+
+        gst_pad_push_event(videoPad, event);
+        gst_object_unref(GST_OBJECT(videoPad));
     }
 
     QString fileName = m_actualSink.toLocalFile();

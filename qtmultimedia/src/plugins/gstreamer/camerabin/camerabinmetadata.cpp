@@ -54,6 +54,36 @@ struct QGstreamerMetaDataKeyLookup
     const char *token;
 };
 
+static QVariant fromGStreamerOrientation(const QVariant &value)
+{
+    // Note gstreamer tokens either describe the counter clockwise rotation of the
+    // image or the clockwise transform to apply to correct the image.  The orientation
+    // value returned is the clockwise rotation of the image.
+    const QString token = value.toString();
+    if (token == QStringLiteral("rotate-90"))
+        return 270;
+    else if (token == QStringLiteral("rotate-180"))
+        return 180;
+    else if (token == QStringLiteral("rotate-270"))
+        return 90;
+    else
+        return 0;
+}
+
+static QVariant toGStreamerOrientation(const QVariant &value)
+{
+    switch (value.toInt()) {
+    case 90:
+        return QStringLiteral("rotate-270");
+    case 180:
+        return QStringLiteral("rotate-180");
+    case 270:
+        return QStringLiteral("rotate-90");
+    default:
+        return QStringLiteral("rotate-0");
+    }
+}
+
 static const QGstreamerMetaDataKeyLookup qt_gstreamerMetaDataKeys[] =
 {
     { QMediaMetaData::Title, GST_TAG_TITLE },
@@ -133,6 +163,10 @@ CameraBinMetaData::CameraBinMetaData(QObject *parent)
 
 QVariant CameraBinMetaData::metaData(const QString &key) const
 {
+    if (key == QMediaMetaData::Orientation) {
+        return fromGStreamerOrientation(m_values.value(QByteArray(GST_TAG_IMAGE_ORIENTATION)));
+    }
+
     static const int count = sizeof(qt_gstreamerMetaDataKeys) / sizeof(QGstreamerMetaDataKeyLookup);
 
     for (int i = 0; i < count; ++i) {
@@ -147,6 +181,15 @@ QVariant CameraBinMetaData::metaData(const QString &key) const
 
 void CameraBinMetaData::setMetaData(const QString &key, const QVariant &value)
 {
+    if (key == QMediaMetaData::Orientation) {
+        m_values.insert(QByteArray(GST_TAG_IMAGE_ORIENTATION), toGStreamerOrientation(value));
+
+        emit QMetaDataWriterControl::metaDataChanged();
+        emit metaDataChanged(m_values);
+
+        return;
+    }
+
     static const int count = sizeof(qt_gstreamerMetaDataKeys) / sizeof(QGstreamerMetaDataKeyLookup);
 
     for (int i = 0; i < count; ++i) {

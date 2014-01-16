@@ -43,6 +43,9 @@
 #include <QtCore/qdebug.h>
 #include <QtCore/qmath.h>
 
+#include <private/qmediaresourcepolicy_p.h>
+#include <private/qmediaresourceset_p.h>
+
 #include "qaudiooutput_pulse.h"
 #include "qaudiodeviceinfo_pulse.h"
 #include "qpulseaudioengine.h"
@@ -145,6 +148,7 @@ QPulseAudioOutput::QPulseAudioOutput(const QByteArray &device)
     : m_device(device)
     , m_errorState(QAudio::NoError)
     , m_deviceState(QAudio::StoppedState)
+    , m_wantedState(QAudio::StoppedState)
     , m_pullMode(true)
     , m_opened(false)
     , m_audioSource(0)
@@ -160,11 +164,20 @@ QPulseAudioOutput::QPulseAudioOutput(const QByteArray &device)
     , m_resuming(false)
     , m_volume(1.0)
 {
+    m_resources = QMediaResourcePolicy::createResourceSet<QMediaPlayerResourceSetInterface>();
+    Q_ASSERT(m_resources);
+    connect(m_resources, SIGNAL(resourcesGranted()), SLOT(handleResourcesGranted()));
+    //denied signal should be queued to have correct state update process,
+    //since in playOrPause, when acquire is call on resource set, it may trigger a resourcesDenied signal immediately,
+    //so handleResourcesDenied should be processed later, otherwise it will be overwritten by state update later in playOrPause.
+    connect(m_resources, SIGNAL(resourcesDenied()), this, SLOT(handleResourcesDenied()), Qt::QueuedConnection);
+    connect(m_resources, SIGNAL(resourcesLost()), SLOT(handleResourcesLost()));
     connect(m_tickTimer, SIGNAL(timeout()), SLOT(userFeed()));
 }
 
 QPulseAudioOutput::~QPulseAudioOutput()
 {
+    QMediaResourcePolicy::destroyResourceSet(m_resources);
     close();
     disconnect(m_tickTimer, SIGNAL(timeout()));
     QCoreApplication::processEvents();
@@ -208,6 +221,7 @@ void QPulseAudioOutput::start(QIODevice *device)
     m_pullMode = true;
     m_audioSource = device;
 
+    m_wantedState = QAudio::ActiveState;
     m_deviceState = QAudio::ActiveState;
 
     open();
@@ -234,6 +248,7 @@ QIODevice *QPulseAudioOutput::start()
     m_audioSource->open(QIODevice::WriteOnly|QIODevice::Unbuffered);
     m_pullMode = false;
 
+    m_wantedState = QAudio::IdleState;
     m_deviceState = QAudio::IdleState;
 
     open();
@@ -270,6 +285,9 @@ bool QPulseAudioOutput::open()
         qDebug() << "Channels: " << spec.channels;
         qDebug() << "Frame size: " << pa_frame_size(&spec);
 #endif
+
+    if (!m_resources->isGranted())
+        m_resources->acquire();
 
     QPulseAudioEngine *pulseEngine = QPulseAudioEngine::instance();
     pa_threaded_mainloop_lock(pulseEngine->mainloop());
@@ -312,6 +330,7 @@ bool QPulseAudioOutput::open()
 
     if (pa_stream_connect_playback(m_stream, m_device.data(), (m_bufferSize > 0) ? &requestedBuffer : NULL, (pa_stream_flags_t)0, &m_chVolume, NULL) < 0) {
         qWarning() << "pa_stream_connect_playback() failed!";
+        m_resources->release();
         return false;
     }
 
@@ -347,6 +366,8 @@ bool QPulseAudioOutput::open()
 
 void QPulseAudioOutput::close()
 {
+    if (m_resources->isGranted())
+        m_resources->release();
     m_tickTimer->stop();
 
     if (m_stream) {
@@ -452,6 +473,7 @@ void QPulseAudioOutput::stop()
 
     m_errorState = QAudio::NoError;
     m_deviceState = QAudio::StoppedState;
+    m_wantedState = QAudio::StoppedState;
     close();
     emit stateChanged(m_deviceState);
 }
@@ -528,6 +550,7 @@ void QPulseAudioOutput::resume()
         pa_threaded_mainloop_unlock(pulseEngine->mainloop());
 
         m_deviceState = QAudio::ActiveState;
+        m_wantedState = QAudio::ActiveState;
 
         m_errorState = QAudio::NoError;
         m_tickTimer->start(m_periodTime);
@@ -549,8 +572,11 @@ QAudioFormat QPulseAudioOutput::format() const
 void QPulseAudioOutput::suspend()
 {
     if (m_deviceState == QAudio::ActiveState || m_deviceState == QAudio::IdleState) {
+        if (m_resources->isGranted())
+            m_resources->release();
         m_tickTimer->stop();
         m_deviceState = QAudio::SuspendedState;
+        m_wantedState = QAudio::SuspendedState;
         m_errorState = QAudio::NoError;
         emit stateChanged(m_deviceState);
 
@@ -663,6 +689,37 @@ QString QPulseAudioOutput::category() const
 {
     return m_category;
 }
+
+void QPulseAudioOutput::handleResourcesGranted()
+{
+    qDebug() << Q_FUNC_INFO << "Resources granted, current state " << m_deviceState << " wanted state " << m_wantedState;
+    // If we were playing, but got suspended, restart
+    if (m_deviceState == QAudio::SuspendedState &&
+        m_wantedState == QAudio::ActiveState) {
+        resume();
+    }
+}
+
+void QPulseAudioOutput::handleResourcesLost()
+{
+    qDebug() << Q_FUNC_INFO << "Resources lost, current state " << m_deviceState << " wanted state " << m_wantedState;
+    // If we lose resources, suspend
+    if (m_deviceState != QAudio::StoppedState) {
+        suspend();
+
+        // And try acquire them again
+        m_resources->acquire();
+    }
+}
+
+void QPulseAudioOutput::handleResourcesDenied()
+{
+    qDebug() << Q_FUNC_INFO << "Resources denied, current state " << m_deviceState << " wanted state " << m_wantedState;
+    // If we are denied resources, suspend
+    if (m_deviceState != QAudio::StoppedState)
+        suspend();
+}
+
 
 QT_END_NAMESPACE
 

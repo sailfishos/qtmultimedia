@@ -384,6 +384,7 @@ QSoundEffectPrivate::QSoundEffectPrivate(QObject* parent):
     m_playQueued(false),
     m_stopping(false),
     m_volume(1.0),
+    m_customVolumeSet(false),
     m_loopCount(1),
     m_runningCount(0),
     m_reloadCategory(false),
@@ -525,6 +526,7 @@ qreal QSoundEffectPrivate::volume() const
 
 void QSoundEffectPrivate::setVolume(qreal volume)
 {
+    m_customVolumeSet = true;
     m_volume = volume;
     emit volumeChanged();
     updateVolume();
@@ -907,7 +909,8 @@ void QSoundEffectPrivate::streamReady()
     PulseDaemonLocker locker;
     m_sinkInputId =  pa_stream_get_index(m_pulseStream);
     updateMuted();
-    updateVolume();
+    if (m_customVolumeSet)
+        updateVolume();
 #ifdef QT_PA_DEBUG
     const pa_buffer_attr *realBufAttr = pa_stream_get_buffer_attr(m_pulseStream);
     qDebug() << this << "m_sinkInputId =" << m_sinkInputId

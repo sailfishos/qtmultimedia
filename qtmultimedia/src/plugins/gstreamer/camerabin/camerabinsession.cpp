@@ -178,6 +178,11 @@ CameraBinSession::CameraBinSession(QObject *parent)
     m_viewfinderSettingsControl = new CameraBinViewfinderSettings(this);
     m_sensorControl = new CameraBinSensor(this);
 
+#ifdef HAVE_GST_PHOTOGRAPHY
+    connect(m_viewfinderSettingsControl, &CameraBinViewfinderSettings::resolutionChanged,
+            m_cameraFocusControl, &CameraBinFocus::setViewfinderResolution);
+#endif
+
     g_object_set(G_OBJECT(m_camerabin), "flags", 0x00000001 | 0x00000002 | 0x00000004 | 0x00000008, NULL);
 
     //post image preview in RGB format

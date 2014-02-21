@@ -64,6 +64,8 @@
 
 #include <pulse/pulseaudio.h>
 
+class QMediaPlayerResourceSetInterface;
+
 QT_BEGIN_NAMESPACE
 
 class QPulseAudioOutput : public QAbstractAudioOutput
@@ -110,10 +112,19 @@ private:
     bool open();
     void close();
     qint64 write(const char *data, qint64 len);
+    void internalSuspend();
+
+    void restartReleaseTimer();
+    void stopReleaseTimer();
 
 private Q_SLOTS:
     void userFeed();
     void onPulseContextFailed();
+    void handleResourcesGranted();
+    void handleResourcesLost();
+    void handleResourcesDenied();
+
+    void handleRelease();
 
 private:
     QByteArray m_device;
@@ -121,6 +132,7 @@ private:
     QAudioFormat m_format;
     QAudio::Error m_errorState;
     QAudio::State m_deviceState;
+    QAudio::State m_wantedState;
     bool m_pullMode;
     bool m_opened;
     QIODevice *m_audioSource;
@@ -142,6 +154,8 @@ private:
 
     qreal m_volume;
     pa_sample_spec m_spec;
+    QMediaPlayerResourceSetInterface *m_resources;
+    QTimer *m_releaseTimer;
 };
 
 class PulseOutputPrivate : public QIODevice

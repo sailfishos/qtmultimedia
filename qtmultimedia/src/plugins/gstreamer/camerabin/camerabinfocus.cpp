@@ -60,7 +60,7 @@ CameraBinFocus::CameraBinFocus(CameraBinSession *session)
      m_focusStatus(QCamera::Unlocked),
      m_focusZoneStatus(QCameraFocusZone::Selected),
      m_focusPoint(0.5, 0.5),
-     m_focusRect(0, 0, 0.25, 0.25)
+     m_focusRect(0, 0, 0.3, 0.3)
 {
     m_focusRect.moveCenter(m_focusPoint);
 

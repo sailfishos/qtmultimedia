@@ -925,12 +925,16 @@ void QSoundEffectPrivate::createPulseStream()
 #endif
 
     pa_proplist *propList = pa_proplist_new();
-    if (m_category.isNull()) {
-        // Meant to be one of the strings "video", "music", "game", "event", "phone", "animation", "production", "a11y", "test"
-        pa_proplist_sets(propList, PA_PROP_MEDIA_ROLE, "game");
-    } else {
+#if !defined(Q_WS_MAEMO_6) && !defined(NEMO_AUDIO)
+    // Meant to be one of the strings "video", "music", "game", "event", "phone", "animation", "production", "a11y", "test"
+    if (m_category.isNull())
+        m_category = "game";
+#endif
+    // On maemo don't set media.role if undefined category.
+
+    if (!m_category.isNull())
         pa_proplist_sets(propList, PA_PROP_MEDIA_ROLE, m_category.toLatin1().constData());
-    }
+
     pa_stream *stream = pa_stream_new_with_proplist(pulseDaemon()->context(), m_name.constData(), &m_pulseSpec, 0, propList);
     pa_proplist_free(propList);
 

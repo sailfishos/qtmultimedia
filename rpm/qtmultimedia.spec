@@ -135,7 +135,7 @@ This package contains the pulse audio sound effect support.
 export QTDIR=/usr/share/qt5
 touch .git
 
-qmake -qt=5
+qmake -qt=5 -r "DEFINES+=NEMO_AUDIO"
 make %{?_smp_mflags}
 
 %install

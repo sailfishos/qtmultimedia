@@ -122,6 +122,7 @@ private Q_SLOTS:
 
 private:
     void playOrPause(QMediaPlayer::State state);
+    void playOrPauseGranted(QMediaPlayer::State state);
 
     void pushState();
     void popAndNotifyState();

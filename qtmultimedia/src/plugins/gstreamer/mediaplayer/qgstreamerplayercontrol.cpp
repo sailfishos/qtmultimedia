@@ -232,6 +232,14 @@ void QGstreamerPlayerControl::playOrPause(QMediaPlayer::State newState)
     if (m_mediaStatus == QMediaPlayer::NoMedia)
         return;
 
+    if (newState == QMediaPlayer::PlayingState && !m_resources->isGranted()) {
+        m_resources->acquire();
+    } else
+        playOrPauseGranted(newState);
+}
+
+void QGstreamerPlayerControl::playOrPauseGranted(QMediaPlayer::State newState)
+{
     pushState();
 
     if (m_setMediaPending) {
@@ -246,9 +254,6 @@ void QGstreamerPlayerControl::playOrPause(QMediaPlayer::State newState)
         setMedia(m_currentResource, m_stream);
     }
 #endif
-
-    if (!m_resources->isGranted())
-        m_resources->acquire();
 
     if (m_resources->isGranted()) {
         if (m_seekToStartPending) {
@@ -354,13 +359,6 @@ void QGstreamerPlayerControl::setMedia(const QMediaContent &content, QIODevice *
     m_pendingSeekPosition = -1;
     m_session->showPrerollFrames(false); // do not show prerolled frames until pause() or play() explicitly called
     m_setMediaPending = false;
-
-    if (!content.isNull() || stream) {
-        if (!m_resources->isGranted())
-            m_resources->acquire();
-    } else {
-        m_resources->release();
-    }
 
     m_session->stop();
 
@@ -580,7 +578,7 @@ void QGstreamerPlayerControl::handleResourcesGranted()
     //rather than m_currentState
     m_currentState = m_userRequestedState;
     if (m_currentState != QMediaPlayer::StoppedState)
-        playOrPause(m_currentState);
+        playOrPauseGranted(m_currentState);
     else
         updateMediaStatus();
 

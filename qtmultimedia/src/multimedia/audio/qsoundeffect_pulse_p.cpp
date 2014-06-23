@@ -57,9 +57,12 @@
 
 #include "qsoundeffect_pulse_p.h"
 
-#if defined(Q_WS_MAEMO_6)
+#if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
 #include <pulse/ext-stream-restore.h>
 #endif
+
+#include <private/qmediaresourcepolicy_p.h>
+#include <private/qmediaresourceset_p.h>
 
 #include <unistd.h>
 
@@ -214,7 +217,7 @@ private:
             case PA_CONTEXT_SETTING_NAME:
                 break;
             case PA_CONTEXT_READY:
-    #if defined(Q_WS_MAEMO_6)
+    #if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
                 pa_ext_stream_restore_read(c, &stream_restore_info_callback, self);
                 pa_ext_stream_restore_set_subscribe_cb(c, &stream_restore_monitor_callback, self);
                 pa_ext_stream_restore_subscribe(c, 1, 0, self);
@@ -226,7 +229,7 @@ private:
         }
     }
 
-#if defined(Q_WS_MAEMO_6)
+#if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
 
     static void stream_restore_monitor_callback(pa_context *c, void *userdata)
     {
@@ -362,10 +365,29 @@ QSoundEffectPrivate::QSoundEffectPrivate(QObject* parent):
     m_runningCount(0),
     m_reloadCategory(false),
     m_sample(0),
-    m_position(0)
+    m_position(0),
+    m_resourcesAvailable(false)
+#if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
+    , m_customVolume(false)
+#endif
 {
     m_ref = new QSoundEffectRef(this);
     pa_sample_spec_init(&m_pulseSpec);
+
+    m_resources = QMediaResourcePolicy::createResourceSet<QMediaPlayerResourceSetInterface>();
+    Q_ASSERT(m_resources);
+    m_resourcesAvailable = m_resources->isAvailable();
+    connect(m_resources, SIGNAL(availabilityChanged(bool)), SLOT(handleAvailabilityChanged(bool)));
+}
+
+void QSoundEffectPrivate::handleAvailabilityChanged(bool available)
+{
+    m_resourcesAvailable = available;
+#ifdef RESOURCE_DEBUG
+    qDebug() << Q_FUNC_INFO << "Resource availability changed " << m_resourcesAvailable;
+#endif
+    if (!m_resourcesAvailable)
+        stop();
 }
 
 void QSoundEffectPrivate::release()
@@ -411,6 +433,8 @@ void QSoundEffectPrivate::setCategory(const QString &category)
 
 QSoundEffectPrivate::~QSoundEffectPrivate()
 {
+    QMediaResourcePolicy::destroyResourceSet(m_resources);
+    m_resources = 0;
     m_ref->release();
 }
 
@@ -499,6 +523,9 @@ int QSoundEffectPrivate::volume() const
 
 void QSoundEffectPrivate::setVolume(int volume)
 {
+#if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
+    m_customVolume = true;
+#endif
     m_volume = volume;
     emit volumeChanged();
     updateVolume();
@@ -508,6 +535,10 @@ void QSoundEffectPrivate::updateVolume()
 {
     if (m_sinkInputId < 0)
         return;
+#if defined(Q_WS_MAEMO_6) || defined(NEMO_AUDIO)
+    if (!m_customVolume)
+        return;
+#endif
     PulseDaemonLocker locker;
     pa_cvolume volume;
     volume.channels = m_pulseSpec.channels;
@@ -595,6 +626,14 @@ void QSoundEffectPrivate::setLoopsRemaining(int loopsRemaining)
 }
 
 void QSoundEffectPrivate::play()
+{
+    if (!m_resourcesAvailable)
+        return;
+
+    playAvailable();
+}
+
+void QSoundEffectPrivate::playAvailable()
 {
 #ifdef QT_PA_DEBUG
     qDebug() << this << "play";
@@ -896,12 +935,16 @@ void QSoundEffectPrivate::createPulseStream()
 #endif
 
     pa_proplist *propList = pa_proplist_new();
-    if (m_category.isNull()) {
-        // Meant to be one of the strings "video", "music", "game", "event", "phone", "animation", "production", "a11y", "test"
-        pa_proplist_sets(propList, PA_PROP_MEDIA_ROLE, "game");
-    } else {
+#if !defined(Q_WS_MAEMO_6) && !defined(NEMO_AUDIO)
+    // Meant to be one of the strings "video", "music", "game", "event", "phone", "animation", "production", "a11y", "test"
+    if (m_category.isNull())
+        m_category = "game";
+#endif
+    // On maemo don't set media.role if undefined category.
+
+    if (!m_category.isNull())
         pa_proplist_sets(propList, PA_PROP_MEDIA_ROLE, m_category.toLatin1().constData());
-    }
+
     pa_stream *stream = pa_stream_new_with_proplist(pulseDaemon()->context(), m_name.constData(), &m_pulseSpec, 0, propList);
     pa_proplist_free(propList);
 

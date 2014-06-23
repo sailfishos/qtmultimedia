@@ -44,6 +44,7 @@
 
 #include <QtCore/qobject.h>
 #include <QtCore/qstack.h>
+#include <QTimer>
 
 #include <qmediaplayercontrol.h>
 #include <qmediaplayer.h>
@@ -120,11 +121,17 @@ private Q_SLOTS:
     void handleResourcesLost();
     void handleResourcesDenied();
 
+    void handleRelease();
+
 private:
     void playOrPause(QMediaPlayer::State state);
+    void playOrPauseGranted(QMediaPlayer::State state);
 
     void pushState();
     void popAndNotifyState();
+
+    void restartReleaseTimer();
+    void stopReleaseTimer();
 
     bool m_ownStream;
     QGstreamerPlayerSession *m_session;
@@ -142,6 +149,7 @@ private:
     QIODevice *m_stream;
 
     QMediaPlayerResourceSetInterface *m_resources;
+    QTimer *m_releaseTimer;
 };
 
 QT_END_NAMESPACE

@@ -14,6 +14,7 @@ BuildRequires:  qt5-qtnetwork-devel
 BuildRequires:  qt5-qtdeclarative-devel
 BuildRequires:  qt5-qtdeclarative-qtquick-devel
 BuildRequires:  qt5-qmake
+BuildRequires:  qt5-qttest-devel
 BuildRequires:  pkgconfig(alsa)
 BuildRequires:  fdupes
 BuildRequires:  pkgconfig(libpulse)

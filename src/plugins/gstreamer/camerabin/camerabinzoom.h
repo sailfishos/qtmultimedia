@@ -35,6 +35,7 @@
 #define CAMERABINZOOMCONTROL_H
 
 #include <qcamerazoomcontrol.h>
+#include <gst/gst.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -58,6 +59,9 @@ public:
     void zoomTo(qreal optical, qreal digital);
 
 private:
+    static void updateZoom(GObject *o, GParamSpec *p, gpointer d);
+    static void updateMaxZoom(GObject *o, GParamSpec *p, gpointer d);
+
     CameraBinSession *m_session;
     qreal m_requestedOpticalZoom;
     qreal m_requestedDigitalZoom;

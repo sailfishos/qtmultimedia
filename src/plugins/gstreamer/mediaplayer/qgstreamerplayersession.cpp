@@ -956,6 +956,13 @@ void QGstreamerPlayerSession::stop()
 
 bool QGstreamerPlayerSession::seek(qint64 ms)
 {
+    if (ms == position()) {
+#ifdef DEBUG_PLAYBIN
+        qDebug() << "not seeking because the current position and requested position are the same";
+#endif
+        return true;
+    }
+
 #ifdef DEBUG_PLAYBIN
     qDebug() << Q_FUNC_INFO << ms;
 #endif

@@ -781,6 +781,19 @@ void CameraBinSession::load()
         return;
     }
 
+    m_recorderControl->applySettings();
+
+    GstEncodingContainerProfile *profile = m_recorderControl->videoProfile();
+    g_object_set (G_OBJECT(m_camerabin),
+                  "video-profile",
+                  profile,
+                  NULL);
+    gst_encoding_profile_unref(profile);
+
+    setAudioCaptureCaps();
+
+    setupCaptureResolution();
+
     gst_element_set_state(m_camerabin, GST_STATE_READY);
 }
 

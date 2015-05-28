@@ -257,7 +257,7 @@ QSGVideoMaterial_YUV::~QSGVideoMaterial_YUV()
 {
     if (!m_textureSize.isEmpty()) {
         if (QOpenGLContext *current = QOpenGLContext::currentContext())
-            current->functions()->glDeleteTextures(m_planeCount, m_textureIds);
+            glDeleteTextures(m_planeCount, m_textureIds);
         else
             qWarning() << "QSGVideoMaterial_YUV: Cannot obtain GL context, unable to delete textures";
     }
@@ -275,14 +275,14 @@ void QSGVideoMaterial_YUV::bind()
             // Frame has changed size, recreate textures...
             if (m_textureSize != m_frame.size()) {
                 if (!m_textureSize.isEmpty())
-                    functions->glDeleteTextures(m_planeCount, m_textureIds);
-                functions->glGenTextures(m_planeCount, m_textureIds);
+                    glDeleteTextures(m_planeCount, m_textureIds);
+                glGenTextures(m_planeCount, m_textureIds);
                 m_textureSize = m_frame.size();
             }
 
             GLint previousAlignment;
-            functions->glGetIntegerv(GL_UNPACK_ALIGNMENT, &previousAlignment);
-            functions->glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glGetIntegerv(GL_UNPACK_ALIGNMENT, &previousAlignment);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
             if (m_format.pixelFormat() == QVideoFrame::Format_NV12
                     || m_format.pixelFormat() == QVideoFrame::Format_NV21) {
@@ -312,7 +312,7 @@ void QSGVideoMaterial_YUV::bind()
                 bindTexture(m_textureIds[0], m_frame.bytesPerLine(y), fh, m_frame.bits(y), GL_LUMINANCE);
             }
 
-            functions->glPixelStorei(GL_UNPACK_ALIGNMENT, previousAlignment);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, previousAlignment);
             m_frame.unmap();
         }
 
@@ -320,7 +320,7 @@ void QSGVideoMaterial_YUV::bind()
     } else {
         for (int i = 0; i < m_planeCount; ++i) {
             functions->glActiveTexture(GL_TEXTURE0 + i);
-            functions->glBindTexture(GL_TEXTURE_2D, m_textureIds[i]);
+            glBindTexture(GL_TEXTURE_2D, m_textureIds[i]);
         }
     }
 }
@@ -329,12 +329,12 @@ void QSGVideoMaterial_YUV::bindTexture(int id, int w, int h, const uchar *bits, 
 {
     QOpenGLFunctions *functions = QOpenGLContext::currentContext()->functions();
 
-    functions->glBindTexture(GL_TEXTURE_2D, id);
-    functions->glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, bits);
-    functions->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    functions->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    functions->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    functions->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, bits);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 QSGVideoNode_YUV::QSGVideoNode_YUV(const QVideoSurfaceFormat &format) :

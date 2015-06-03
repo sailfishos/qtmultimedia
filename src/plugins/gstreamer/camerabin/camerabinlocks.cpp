@@ -64,10 +64,10 @@ QCamera::LockTypes CameraBinLocks::supportedLocks() const
 #if GST_CHECK_VERSION(1, 2, 0)
     if (GstPhotography *photography = m_session->photography()) {
         if (gst_photography_get_capabilities(photography) & GST_PHOTOGRAPHY_CAPS_WB_MODE)
-            locks |= QCamera::LockWhiteBalance;
+/*            locks |= QCamera::LockWhiteBalance; */
         if (g_object_class_find_property(
                     G_OBJECT_GET_CLASS(m_session->cameraSource()), "exposure-mode")) {
-            locks |= QCamera::LockExposure;
+/*            locks |= QCamera::LockExposure; */
         }
     }
 #endif

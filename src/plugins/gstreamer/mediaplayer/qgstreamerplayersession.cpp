@@ -1589,9 +1589,6 @@ void QGstreamerPlayerSession::playbinNotifySource(GObject *o, GParamSpec *p, gpo
         qDebug() << "Current source is a non-live source";
 #endif
 
-    if (self->m_videoSink)
-        g_object_set(G_OBJECT(self->m_videoSink), "sync", !self->m_isLiveSource, NULL);
-
     gst_object_unref(source);
 }
 

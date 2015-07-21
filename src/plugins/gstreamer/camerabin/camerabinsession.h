@@ -180,6 +180,7 @@ public slots:
 private slots:
     void handleViewfinderChange();
     void setupCaptureResolution();
+    void handleBusyChanged(bool busy);
 
 private:
     void load();

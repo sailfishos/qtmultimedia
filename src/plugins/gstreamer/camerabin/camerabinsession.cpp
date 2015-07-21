@@ -811,8 +811,6 @@ void CameraBinSession::load()
 
     setStatus(QCamera::LoadingStatus);
 
-    gst_element_set_state(m_camerabin, GST_STATE_NULL);
-
     if (!setupCameraBin()) {
         setError(QCamera::CameraError, QStringLiteral("No camera source available"));
         return;
@@ -839,22 +837,16 @@ void CameraBinSession::unload()
     if (m_status == QCamera::UnloadedStatus || m_status == QCamera::UnloadingStatus)
         return;
 
+    // We save the recording state in case something reacted to setStatus() and
+    // stopped recording.
+    bool wasRecording = m_recordingActive;
+
     setStatus(QCamera::UnloadingStatus);
 
     if (m_recordingActive)
         stopVideoRecording();
-
-    if (m_viewfinderInterface)
-        m_viewfinderInterface->stopRenderer();
-
-    gst_element_set_state(m_camerabin, GST_STATE_NULL);
-
-    if (m_busy)
-        emit busyChanged(m_busy = false);
-
-    m_supportedViewfinderSettings.clear();
-
-    setStatus(QCamera::UnloadedStatus);
+    else if (!wasRecording)
+        handleBusyChanged(false);
 }
 
 void CameraBinSession::start()
@@ -912,7 +904,7 @@ void CameraBinSession::updateBusyStatus(GObject *o, GParamSpec *p, gpointer d)
 
     if (session->m_busy != busy) {
         session->m_busy = busy;
-        QMetaObject::invokeMethod(session, "busyChanged",
+        QMetaObject::invokeMethod(session, "handleBusyChanged",
                                   Qt::QueuedConnection,
                                   Q_ARG(bool, busy));
     }
@@ -1520,6 +1512,30 @@ void CameraBinSession::elementRemoved(GstBin *, GstElement *element, CameraBinSe
         session->m_audioEncoder = 0;
     else if (element == session->m_videoEncoder)
         session->m_videoEncoder = 0;
+}
+
+void CameraBinSession::handleBusyChanged(bool busy)
+{
+    // don't do anything if we are not unloading.
+    // It could be that the camera is starting again while it is being unloaded
+    if (m_status != QCamera::UnloadingStatus) {
+        if (m_busy != busy)
+            emit busyChanged(m_busy = busy);
+        return;
+    }
+
+    // Now we can really stop
+    if (m_viewfinderInterface)
+        m_viewfinderInterface->stopRenderer();
+
+    gst_element_set_state(m_camerabin, GST_STATE_NULL);
+
+    if (m_busy != busy)
+        emit busyChanged(m_busy = busy);
+
+    m_supportedViewfinderSettings.clear();
+
+    setStatus(QCamera::UnloadedStatus);
 }
 
 QT_END_NAMESPACE

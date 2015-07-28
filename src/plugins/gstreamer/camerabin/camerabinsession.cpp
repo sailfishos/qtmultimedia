@@ -173,7 +173,7 @@ CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *pa
         g_object_set(G_OBJECT(m_camerabin), "flags", envFlags.toInt(), NULL);
 
     //post image preview in RGB format
-    g_object_set(G_OBJECT(m_camerabin), POST_PREVIEWS_PROPERTY, TRUE, NULL);
+    g_object_set(G_OBJECT(m_camerabin), POST_PREVIEWS_PROPERTY, FALSE, NULL);
 
 #if GST_CHECK_VERSION(1,0,0)
     GstCaps *previewCaps = gst_caps_new_simple(

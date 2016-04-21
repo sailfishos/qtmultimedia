@@ -11,6 +11,7 @@ PUBLIC_HEADERS += \
     controls/qcameracontrol.h \
     controls/qcamerainfocontrol.h \
     controls/qcameraexposurecontrol.h \
+    controls/qcamerafastcapturecontrol.h \
     controls/qcamerafeedbackcontrol.h \
     controls/qcameraflashcontrol.h \
     controls/qcamerafocuscontrol.h \
@@ -49,6 +50,7 @@ SOURCES += \
     controls/qcameracontrol.cpp \
     controls/qcamerainfocontrol.cpp \
     controls/qcameraexposurecontrol.cpp \
+    controls/qcamerafastcapturecontrol.cpp \
     controls/qcamerafeedbackcontrol.cpp \
     controls/qcameraflashcontrol.cpp \
     controls/qcamerafocuscontrol.cpp \

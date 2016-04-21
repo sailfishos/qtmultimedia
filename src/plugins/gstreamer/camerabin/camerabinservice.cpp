@@ -56,6 +56,7 @@
 #include "camerabinviewfindersettings.h"
 #include "camerabinviewfindersettings2.h"
 #include "camerabinzoom.h"
+#include "camerabinfastcapturecontrol.h"
 #include <private/qgstreamerbushelper_p.h>
 #include <private/qgstutils_p.h>
 
@@ -155,6 +156,7 @@ CameraBinService::CameraBinService(GstElementFactory *sourceFactory, QObject *pa
 #if defined(Q_WS_MAEMO_6)
     new CameraButtonListener(this);
 #endif
+    m_fastCaptureControl = new CameraBinFastCaptureControl(m_captureSession, this);
 }
 
 CameraBinService::~CameraBinService()
@@ -242,6 +244,9 @@ QMediaControl *CameraBinService::requestControl(const char *name)
 
     if (qstrcmp(name, QCameraCaptureBufferFormatControl_iid) == 0)
         return m_captureSession->captureBufferFormatControl();
+
+    if (qstrcmp(name, QCameraFastCaptureControl_iid) == 0)
+        return m_fastCaptureControl;
 
     if (qstrcmp(name, QCameraViewfinderSettingsControl_iid) == 0) {
         if (!m_viewfinderSettingsControl)

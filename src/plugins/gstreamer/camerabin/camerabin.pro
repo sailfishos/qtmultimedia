@@ -29,7 +29,8 @@ HEADERS += \
     $$PWD/camerabincapturebufferformat.h \
     $$PWD/camerabinviewfindersettings.h \
     $$PWD/camerabinviewfindersettings2.h \
-    $$PWD/camerabininfocontrol.h
+    $$PWD/camerabininfocontrol.h \
+    $$PWD/camerabinfastcapturecontrol.h
 
 SOURCES += \
     $$PWD/camerabinserviceplugin.cpp \
@@ -50,7 +51,8 @@ SOURCES += \
     $$PWD/camerabinviewfindersettings.cpp \
     $$PWD/camerabinviewfindersettings2.cpp \
     $$PWD/camerabincapturebufferformat.cpp \
-    $$PWD/camerabininfocontrol.cpp
+    $$PWD/camerabininfocontrol.cpp \
+    $$PWD/camerabinfastcapturecontrol.cpp
 
 maemo6 {
     HEADERS += \

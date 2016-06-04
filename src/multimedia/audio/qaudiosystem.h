@@ -53,6 +53,7 @@ QT_BEGIN_NAMESPACE
 
 // Required for QDoc workaround
 class QString;
+class QIODevice;
 
 class Q_MULTIMEDIA_EXPORT QAbstractAudioDeviceInfo : public QObject
 {

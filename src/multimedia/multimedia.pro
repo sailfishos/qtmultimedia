@@ -1,6 +1,15 @@
 TARGET = QtMultimedia
 QT = core-private network gui-private
 
+MODULE_PLUGIN_TYPES = \
+    mediaservice \
+    audio \
+    video/bufferpool \
+    video/gstvideorenderer \
+    video/videonode \
+    playlistformats \
+    resourcepolicy
+
 QMAKE_DOCS = $$PWD/doc/qtmultimedia.qdocconf
 
 load(qt_module)

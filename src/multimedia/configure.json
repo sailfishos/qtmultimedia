@@ -9,6 +9,7 @@
         "options": {
             "alsa": "boolean",
             "gstreamer": { "type": "optionalString", "values": [ "no", "yes", "0.10", "1.0" ] },
+            "linux_v4l": "boolean",
             "pulseaudio": "boolean",
             "mediaplayer-backend": { "type": "string", "values": [ "directshow", "wmf" ] },
             "wmf-backend": { "type": "void", "name": "mediaplayer-backend", "value": "wmf" }

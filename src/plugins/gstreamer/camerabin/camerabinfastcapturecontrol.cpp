@@ -68,7 +68,7 @@ bool CameraBinFastCaptureControl::isFastCaptureEnabled() const
 void CameraBinFastCaptureControl::setFastCaptureEnabled(bool enabled)
 {
     gboolean enable = (enabled ? TRUE : FALSE);
-    g_object_get(m_session->cameraSource(), "fast-capture", enable, NULL);
+    g_object_set(m_session->cameraSource(), "fast-capture", enable, NULL);
 }
 
 QT_END_NAMESPACE

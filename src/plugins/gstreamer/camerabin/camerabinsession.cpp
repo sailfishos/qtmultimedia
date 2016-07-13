@@ -116,6 +116,7 @@ CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *pa
      m_pendingState(QCamera::UnloadedState),
      m_muted(false),
      m_busy(false),
+     m_readyForCapture(false),
      m_captureMode(QCamera::CaptureStillImage),
      m_audioInputFactory(0),
      m_videoInputFactory(0),
@@ -531,8 +532,11 @@ GstElement *CameraBinSession::buildCameraSource()
         }
     }
 
-    if (m_cameraSrc != camSrc)
+    if (m_cameraSrc != camSrc) {
         g_object_set(G_OBJECT(m_camerabin), CAMERA_SOURCE_PROPERTY, m_cameraSrc, NULL);
+        g_signal_connect(G_OBJECT(m_cameraSrc), "notify::ready-for-capture", G_CALLBACK(updateReadyForCapture), this);
+
+    }
 
     if (camSrc)
         gst_object_unref(GST_OBJECT(camSrc));
@@ -893,6 +897,11 @@ bool CameraBinSession::isBusy() const
     return m_busy;
 }
 
+bool CameraBinSession::isReadyForCapture() const
+{
+    return m_readyForCapture;
+}
+
 void CameraBinSession::updateBusyStatus(GObject *o, GParamSpec *p, gpointer d)
 {
     Q_UNUSED(p);
@@ -907,6 +916,21 @@ void CameraBinSession::updateBusyStatus(GObject *o, GParamSpec *p, gpointer d)
         QMetaObject::invokeMethod(session, "handleBusyChanged",
                                   Qt::QueuedConnection,
                                   Q_ARG(bool, busy));
+    }
+}
+
+void CameraBinSession::updateReadyForCapture(GObject *o, GParamSpec *p, gpointer d)
+{
+    Q_UNUSED(o);
+    Q_UNUSED(p);
+
+    CameraBinSession *session = reinterpret_cast<CameraBinSession *>(d);
+    gboolean ready = false;
+    g_object_get(o, "ready-for-capture", &ready, NULL);
+    if (session->m_readyForCapture != ready) {
+        session->m_readyForCapture = ready;
+        QMetaObject::invokeMethod(session, "handleReadyForCaptureChanged",
+                                  Qt::QueuedConnection, Q_ARG(bool, ready));
     }
 }
 

@@ -53,22 +53,22 @@ CameraBinFastCaptureControl::~CameraBinFastCaptureControl()
 
 bool CameraBinFastCaptureControl::isFastCaptureSupported() const
 {
-  gboolean supported = FALSE;
-  g_object_get(m_session->cameraSource(), "fast-capture-supported", &supported, NULL);
-  return supported == TRUE;
+    gboolean supported = FALSE;
+    g_object_get(m_session->cameraSource(), "fast-capture-supported", &supported, NULL);
+    return supported == TRUE;
 }
 
 bool CameraBinFastCaptureControl::isFastCaptureEnabled() const
 {
-  gboolean enabled = FALSE;
-  g_object_get(m_session->cameraSource(), "fast-capture", &enabled, NULL);
-  return enabled == TRUE;
+    gboolean enabled = FALSE;
+    g_object_get(m_session->cameraSource(), "fast-capture", &enabled, NULL);
+    return enabled == TRUE;
 }
 
 void CameraBinFastCaptureControl::setFastCaptureEnabled(bool enabled)
 {
-  gboolean enable = (enabled ? TRUE : FALSE);
-  g_object_get(m_session->cameraSource(), "fast-capture", enable, NULL);
+    gboolean enable = (enabled ? TRUE : FALSE);
+    g_object_get(m_session->cameraSource(), "fast-capture", enable, NULL);
 }
 
 QT_END_NAMESPACE

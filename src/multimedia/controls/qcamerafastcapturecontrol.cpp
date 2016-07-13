@@ -37,7 +37,7 @@ QT_BEGIN_NAMESPACE
 
 /*!
     \class QCameraFastCaptureControl
-    \since 5.4
+    \since 5.5
 
     \brief The QCameraFastCaptureControl class is a private class that provides a access to image fast capture implementation.
     \inmodule QtMultimedia

@@ -29,7 +29,9 @@ win32 {
         qtCompileTest(gstreamer_photography)
         qtCompileTest(gstreamer_encodingprofiles)
         qtCompileTest(gstreamer_appsrc)
-        qtCompileTest(linux_v4l)
+        !contains(DEFINES, DISABLE_V4L) {
+            qtCompileTest(linux_v4l)
+        }
     }
 
     qtCompileTest(resourcepolicy)

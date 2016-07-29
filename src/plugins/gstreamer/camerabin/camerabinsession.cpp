@@ -999,8 +999,9 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
                 qWarning() << "CameraBin error:" << message;
             }
 
-            //only report error messager from camerabin
-            if (GST_MESSAGE_SRC(gm) == GST_OBJECT_CAST(m_camerabin)) {
+            GstObject *src = GST_MESSAGE_SRC(gm);
+            //only report error messager from camerabin or camera source
+            if (src == GST_OBJECT_CAST(m_camerabin) || src == GST_OBJECT_CAST(m_cameraSrc)) {
                 if (message.isEmpty())
                     message = tr("Camera error");
 

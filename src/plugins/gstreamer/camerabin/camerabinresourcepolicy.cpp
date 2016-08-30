@@ -114,7 +114,8 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
         requestedTypes << ResourcePolicy::LensCoverType
                        << ResourcePolicy::VideoPlaybackType
                        << ResourcePolicy::VideoRecorderType
-                       << ResourcePolicy::LedsType;
+                       << ResourcePolicy::LedsType
+                       << ResourcePolicy::RearFlashlightType;
         break;
     case VideoCaptureResources:
         requestedTypes << ResourcePolicy::LensCoverType
@@ -122,7 +123,8 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
                        << ResourcePolicy::VideoRecorderType
                        << ResourcePolicy::AudioPlaybackType
                        << ResourcePolicy::AudioRecorderType
-                       << ResourcePolicy::LedsType;
+                       << ResourcePolicy::LedsType
+                       << ResourcePolicy::RearFlashlightType;
         break;
     }
 

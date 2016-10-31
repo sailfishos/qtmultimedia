@@ -56,6 +56,9 @@
 #include <private/qgstutils_p.h>
 #include <qmediarecorder.h>
 #include <qvideosurfaceformat.h>
+#include <QFileInfo>
+#include <QStringList>
+#include <QMap>
 
 #ifdef HAVE_GST_PHOTOGRAPHY
 #include <gst/interfaces/photography.h>
@@ -1119,17 +1122,33 @@ QString CameraBinSession::currentContainerFormat() const
     return format;
 }
 
+static QMap<QString, QStringList> containerFormatToValidExtensions()
+{
+    QMap<QString, QStringList> retn;
+    QStringList quicktimePossibilities;
+    quicktimePossibilities.append(QLatin1String(".mov"));
+    quicktimePossibilities.append(QLatin1String(".mp4"));
+    retn.insert(QLatin1String("video/quicktime, variant=(string)iso"), quicktimePossibilities);
+    return retn;
+}
+
 void CameraBinSession::recordVideo()
 {
+    static QMap<QString, QStringList> extensionsForFormat(containerFormatToValidExtensions());
     QString format = currentContainerFormat();
     if (format.isEmpty())
         format = m_mediaContainerControl->actualContainerFormat();
 
-    const QString actualFileName = m_mediaStorageLocation.generateFileName(m_sink.isLocalFile() ? m_sink.toLocalFile()
-                                                                                                : m_sink.toString(),
+    const QString fileName = m_sink.isLocalFile() ? m_sink.toLocalFile() : m_sink.toString();
+    const QString suffix = QFileInfo(fileName).suffix();
+    const QString extension = (!suffix.isEmpty() && extensionsForFormat[format].contains(suffix))
+                            ? suffix
+                            : m_mediaContainerControl->suggestedFileExtension(format);
+
+    const QString actualFileName = m_mediaStorageLocation.generateFileName(fileName,
                                       QMediaStorageLocation::Movies,
                                       QLatin1String("clip_"),
-                                      m_mediaContainerControl->suggestedFileExtension(format));
+                                      extension);
 
     m_recordingActive = true;
     m_actualSink = QUrl::fromLocalFile(actualFileName);

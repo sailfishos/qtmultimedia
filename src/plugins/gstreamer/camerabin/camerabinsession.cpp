@@ -56,6 +56,10 @@
 #include <private/qgstutils_p.h>
 #include <qmediarecorder.h>
 #include <qvideosurfaceformat.h>
+#include <QMimeDatabase>
+#include <QMimeType>
+#include <QStringList>
+#include <QMap>
 
 #ifdef HAVE_GST_PHOTOGRAPHY
 #include <gst/interfaces/photography.h>
@@ -1119,17 +1123,47 @@ QString CameraBinSession::currentContainerFormat() const
     return format;
 }
 
+static QMap<QString, QStringList> containerFormatToMimeTypeNames()
+{
+    QMap<QString, QStringList> retn;
+    QStringList quicktimePossibilities;
+    quicktimePossibilities.append(QLatin1String("video/quicktime"));
+    quicktimePossibilities.append(QLatin1String("video/mp4"));
+    retn.insert(QLatin1String("video/quicktime, variant=(string)iso"), quicktimePossibilities);
+    return retn;
+}
+
 void CameraBinSession::recordVideo()
 {
+    static QMap<QString, QStringList> mimeTypesForFormat(containerFormatToMimeTypeNames());
     QString format = currentContainerFormat();
     if (format.isEmpty())
         format = m_mediaContainerControl->actualContainerFormat();
 
-    const QString actualFileName = m_mediaStorageLocation.generateFileName(m_sink.isLocalFile() ? m_sink.toLocalFile()
-                                                                                                : m_sink.toString(),
+    QMimeDatabase mimeDatabase;
+    QStringList possibleExtensions;
+    QStringList mimeTypeNames(mimeTypesForFormat.value(format));
+    QString mimeTypeName = format.contains(',') ? format.mid(0, format.indexOf(',')) : format;
+    if (!mimeTypeNames.contains(mimeTypeName))
+        mimeTypeNames.append(mimeTypeName);
+    Q_FOREACH (const QString &name, mimeTypeNames) {
+        const QMimeType &mimeType(mimeDatabase.mimeTypeForName(name));
+        possibleExtensions.append(mimeType.suffixes());
+    }
+
+    QString extension(m_mediaContainerControl->suggestedFileExtension(format)); // fallback.
+    const QString fileName = m_sink.isLocalFile() ? m_sink.toLocalFile() : m_sink.toString();
+    Q_FOREACH (const QString &possibility, possibleExtensions) {
+        if (fileName.endsWith(QStringLiteral(".%1").arg(possibility))) {
+            extension = possibility;
+            break;
+        }
+    }
+
+    const QString actualFileName = m_mediaStorageLocation.generateFileName(fileName,
                                       QMediaStorageLocation::Movies,
                                       QLatin1String("clip_"),
-                                      m_mediaContainerControl->suggestedFileExtension(format));
+                                      extension);
 
     m_recordingActive = true;
     m_actualSink = QUrl::fromLocalFile(actualFileName);

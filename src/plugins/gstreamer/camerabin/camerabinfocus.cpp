@@ -349,6 +349,7 @@ void CameraBinFocus::_q_handleCameraStatusChange(QCamera::Status status)
 void CameraBinFocus::_q_startFocusing()
 {
     _q_setFocusStatus(QCamera::Searching, QCamera::UserRequest);
+    gst_photography_set_autofocus(m_session->photography(), FALSE);
     gst_photography_set_autofocus(m_session->photography(), TRUE);
 }
 

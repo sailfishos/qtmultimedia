@@ -24,7 +24,7 @@ BuildRequires:  pkgconfig(gstreamer-video-1.0)
 BuildRequires:  pkgconfig(gstreamer-pbutils-1.0)
 BuildRequires:  pkgconfig(gstreamer-app-1.0)
 BuildRequires:  pkgconfig(gstreamer-plugins-bad-1.0)
-BuildRequires:  pkgconfig(libresourceqt5) >= 1.29
+BuildRequires:  pkgconfig(libresourceqt5)
 BuildRequires:  pkgconfig(Qt5QuickTest)
 
 %description
@@ -148,7 +148,7 @@ This package contains the egl video node plugin.
 export QTDIR=/usr/share/qt5
 touch .git
 
-%qmake5 GST_VERSION=1.0 QT.widgets.name= DEFINES+=QT_NO_WIDGETS -r "DEFINES+=NEMO_AUDIO" CONFIG+=config_pulseaudio
+%qmake5 QT.widgets.name= DEFINES+=QT_NO_WIDGETS -r  -- -pulseaudio -gstreamer 1.0 -no-linux_v4l
 make %{?_smp_mflags}
 
 %install

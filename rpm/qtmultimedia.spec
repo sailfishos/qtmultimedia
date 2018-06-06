@@ -24,7 +24,8 @@ BuildRequires:  pkgconfig(gstreamer-video-1.0)
 BuildRequires:  pkgconfig(gstreamer-pbutils-1.0)
 BuildRequires:  pkgconfig(gstreamer-app-1.0)
 BuildRequires:  pkgconfig(gstreamer-plugins-bad-1.0)
-BuildRequires:  pkgconfig(libresourceqt5) >= 1.29
+BuildRequires:  pkgconfig(libresourceqt5)
+BuildRequires:  pkgconfig(openal)
 BuildRequires:  pkgconfig(Qt5QuickTest)
 
 %description

@@ -1,9 +1,9 @@
 QT += core-private multimedia-private network
 
-qtHaveModule(widgets) {
-    QT += widgets multimediawidgets-private
-    DEFINES += HAVE_WIDGETS
-}
+#qtHaveModule(widgets) {
+#    QT += widgets multimediawidgets-private
+#    DEFINES += HAVE_WIDGETS
+#}
 
 LIBS += -lqgsttools_p
 

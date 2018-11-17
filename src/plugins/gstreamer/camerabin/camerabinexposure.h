@@ -40,6 +40,10 @@
 #include <gst/gst.h>
 #include <glib.h>
 
+#ifdef HAVE_GST_PHOTOGRAPHY
+# include <gst/interfaces/photography.h>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 class CameraBinSession;
@@ -62,6 +66,10 @@ public:
 private:
     CameraBinSession *m_session;
     QHash<ExposureParameter, QVariant> m_requestedValues;
+
+#ifdef HAVE_GST_PHOTOGRAPHY
+    QMap<GstPhotographySceneMode, QCameraExposure::ExposureMode> m_mappedExposureValues;
+#endif
 };
 
 QT_END_NAMESPACE

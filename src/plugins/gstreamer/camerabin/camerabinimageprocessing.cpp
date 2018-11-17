@@ -62,6 +62,10 @@ CameraBinImageProcessing::CameraBinImageProcessing(CameraBinSession *session)
         m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_SUNSET] = QCameraImageProcessing::WhiteBalanceSunset;
         m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_TUNGSTEN] = QCameraImageProcessing::WhiteBalanceTungsten;
         m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_FLUORESCENT] = QCameraImageProcessing::WhiteBalanceFluorescent;
+#if GST_CHECK_VERSION(1, 14, 0)
+        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_WARM_FLUORESCENT] = QCameraImageProcessing::WhiteBalanceWarmFluorescent;
+        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_SHADE] = QCameraImageProcessing::WhiteBalanceShade;
+#endif
         unlockWhiteBalance();
     }
 
@@ -77,6 +81,11 @@ CameraBinImageProcessing::CameraBinImageProcessing(CameraBinSession *session)
           m_filterMap.insert(QCameraImageProcessing::ColorFilterWhiteboard, GST_PHOTOGRAPHY_COLOR_TONE_MODE_WHITEBOARD);
           m_filterMap.insert(QCameraImageProcessing::ColorFilterBlackboard, GST_PHOTOGRAPHY_COLOR_TONE_MODE_BLACKBOARD);
           m_filterMap.insert(QCameraImageProcessing::ColorFilterAqua, GST_PHOTOGRAPHY_COLOR_TONE_MODE_AQUA);
+#endif
+#if GST_CHECK_VERSION(1, 14, 0)
+          m_filterMap.insert(QCameraImageProcessing::ColorFilterEmboss, GST_PHOTOGRAPHY_COLOR_TONE_MODE_EMBOSS);
+          m_filterMap.insert(QCameraImageProcessing::ColorFilterSketch, GST_PHOTOGRAPHY_COLOR_TONE_MODE_SKETCH);
+          m_filterMap.insert(QCameraImageProcessing::ColorFilterNeon, GST_PHOTOGRAPHY_COLOR_TONE_MODE_NEON);
 #endif
       }
 #else
@@ -197,6 +206,26 @@ bool CameraBinImageProcessing::setWhiteBalanceMode(QCameraImageProcessing::White
 bool CameraBinImageProcessing::isWhiteBalanceModeSupported(QCameraImageProcessing::WhiteBalanceMode mode) const
 {
 #ifdef HAVE_GST_PHOTOGRAPHY
+    // get supported modes from GStreamer
+    QList<QCameraImageProcessing::WhiteBalanceMode> supportedWbModes;
+    if (G_IS_OBJECT(m_session->cameraSource()) &&
+            G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+            g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-wb-modes")) {
+
+        GVariant *supported_wb_modes;
+        g_object_get(G_OBJECT(m_session->cameraSource()), "supported-wb-modes", &supported_wb_modes, NULL);
+
+        if (supported_wb_modes) {
+            int wb_count = g_variant_n_children(supported_wb_modes);
+
+            for (int i = 0; i < wb_count; i++) {
+                GVariant *mode = g_variant_get_child_value(supported_wb_modes, i);
+                supportedWbModes << m_mappedWbValues[static_cast<GstPhotographyWhiteBalanceMode>(g_variant_get_int32(mode))];
+                g_variant_unref(mode);
+            }
+        }
+        return supportedWbModes.contains(mode);
+    }
     return m_mappedWbValues.values().contains(mode);
 #else
     Q_UNUSED(mode);
@@ -270,6 +299,25 @@ bool CameraBinImageProcessing::isParameterValueSupported(QCameraImageProcessingC
     case ColorFilter: {
         const QCameraImageProcessing::ColorFilter filter = value.value<QCameraImageProcessing::ColorFilter>();
 #ifdef HAVE_GST_PHOTOGRAPHY
+        // get supported effects from GStreamer
+        QList<QCameraImageProcessing::ColorFilter> supportedEffects;
+        if (G_IS_OBJECT(m_session->cameraSource()) &&
+                G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+                g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-color-tones")) {
+
+            GVariant *supported_effects;
+            g_object_get(G_OBJECT(m_session->cameraSource()), "supported-color-tones", &supported_effects, NULL);
+
+            if (supported_effects) {
+                int effect_count = g_variant_n_children(supported_effects);
+
+                for (int i = 0; i < effect_count; i++) {
+                    GVariant *mode = g_variant_get_child_value(supported_effects, i);
+                    supportedEffects << m_filterMap.keys().at(m_filterMap.values().indexOf((GstPhotographyColorToneMode)g_variant_get_int32(mode)));
+                }
+            }
+            return supportedEffects.contains(filter);
+        }
         return m_filterMap.contains(filter);
 #else
         return filter == QCameraImageProcessing::ColorFilterNone;

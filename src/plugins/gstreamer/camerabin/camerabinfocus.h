@@ -46,6 +46,10 @@
 #include <gst/gst.h>
 #include <glib.h>
 
+#ifdef HAVE_GST_PHOTOGRAPHY
+#include <gst/interfaces/photography.h>
+#endif
+
 QT_BEGIN_NAMESPACE
 
 class CameraBinSession;
@@ -121,6 +125,9 @@ private:
     QVector<QRect> m_faceFocusRects;
     QBasicTimer m_faceResetTimer;
     mutable QMutex m_mutex;
+#ifdef HAVE_GST_PHOTOGRAPHY
+    QMap<GstPhotographyFocusMode, QCameraFocus::FocusMode> m_focusMap;
+#endif
 };
 
 QT_END_NAMESPACE

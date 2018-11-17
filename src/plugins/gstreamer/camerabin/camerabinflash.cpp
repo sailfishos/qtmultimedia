@@ -47,6 +47,13 @@ CameraBinFlash::CameraBinFlash(CameraBinSession *session)
     :QCameraFlashControl(session),
      m_session(session)
 {
+#ifdef HAVE_GST_PHOTOGRAPHY
+    m_flashMap[GST_PHOTOGRAPHY_FLASH_MODE_AUTO] = QCameraExposure::FlashAuto;
+    m_flashMap[GST_PHOTOGRAPHY_FLASH_MODE_OFF] = QCameraExposure::FlashOff;
+    m_flashMap[GST_PHOTOGRAPHY_FLASH_MODE_ON] = QCameraExposure::FlashOn;
+    m_flashMap[GST_PHOTOGRAPHY_FLASH_MODE_FILL_IN] = QCameraExposure::FlashFill;
+    m_flashMap[GST_PHOTOGRAPHY_FLASH_MODE_RED_EYE] = QCameraExposure::FlashRedEyeReduction;
+#endif
 }
 
 CameraBinFlash::~CameraBinFlash()
@@ -110,6 +117,30 @@ bool CameraBinFlash::isFlashModeSupported(QCameraExposure::FlashModes mode) cons
             mode == QCameraExposure::FlashTorch | QCameraExposure::FlashOff)
             return true;
     }
+
+#ifdef HAVE_GST_PHOTOGRAPHY
+    //QList<QCameraExposure::FlashMode> supportedFlash;
+    QCameraExposure::FlashModes supportedModes;
+    if (G_IS_OBJECT(m_session->cameraSource()) &&
+            G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+            g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-flash-modes")) {
+
+        GVariant *flash_modes;
+        g_object_get(G_OBJECT(m_session->cameraSource()), "supported-flash-modes", &flash_modes, NULL);
+
+        if (flash_modes) {
+            int flash_count = g_variant_n_children(flash_modes);
+
+            for (int i = 0; i < flash_count; i++) {
+                GVariant *mode = g_variant_get_child_value(flash_modes, i);
+                supportedModes |= m_flashMap[static_cast<GstPhotographyFlashMode>(g_variant_get_int32(mode))];
+                g_variant_unref(mode);
+            }
+        }
+        return mode & supportedModes;
+    }
+
+#endif
 
     return  mode == QCameraExposure::FlashOff ||
             mode == QCameraExposure::FlashOn ||

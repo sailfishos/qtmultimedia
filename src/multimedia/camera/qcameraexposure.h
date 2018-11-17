@@ -95,6 +95,10 @@ public:
         ExposureParty = 18,
         ExposureCandlelight = 19,
         ExposureBarcode = 20,
+        ExposureFlowers = 21,
+        ExposureAR = 22,
+        ExposureHDR = 23,
+        ExposureCloseup = 24,
         ExposureModeVendor = 1000
     };
 

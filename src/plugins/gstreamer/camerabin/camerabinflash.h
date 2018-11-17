@@ -39,6 +39,9 @@
 
 #include <gst/gst.h>
 #include <glib.h>
+#ifdef HAVE_GST_PHOTOGRAPHY
+# include <gst/interfaces/photography.h>
+#endif
 
 QT_BEGIN_NAMESPACE
 
@@ -59,6 +62,10 @@ public:
 
 private:
     CameraBinSession *m_session;
+
+#ifdef HAVE_GST_PHOTOGRAPHY
+    QMap<GstPhotographyFlashMode, QCameraExposure::FlashMode> m_flashMap;
+#endif
 };
 
 QT_END_NAMESPACE

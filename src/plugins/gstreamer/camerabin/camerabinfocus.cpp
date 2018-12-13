@@ -70,6 +70,18 @@ CameraBinFocus::CameraBinFocus(CameraBinSession *session)
 
     connect(m_session, SIGNAL(statusChanged(QCamera::Status)),
             this, SLOT(_q_handleCameraStatusChange(QCamera::Status)));
+
+#ifdef HAVE_GST_PHOTOGRAPHY
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_AUTO] = QCameraFocus::AutoFocus;
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_MACRO] = QCameraFocus::MacroFocus;
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_PORTRAIT] = QCameraFocus::AutoFocus; //No direct mappint
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_INFINITY] = QCameraFocus::InfinityFocus;
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_HYPERFOCAL] = QCameraFocus::HyperfocalFocus;
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_EXTENDED] = QCameraFocus::AutoFocus; //No direct mapping
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_CONTINUOUS_NORMAL] = QCameraFocus::ContinuousFocus;
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_CONTINUOUS_EXTENDED] = QCameraFocus::ContinuousFocus; //No direct mapping
+    m_focusMap[GST_PHOTOGRAPHY_FOCUS_MODE_MANUAL] = QCameraFocus::ManualFocus;
+#endif
 }
 
 CameraBinFocus::~CameraBinFocus()
@@ -116,6 +128,28 @@ void CameraBinFocus::setFocusMode(QCameraFocus::FocusModes mode)
 
 bool CameraBinFocus::isFocusModeSupported(QCameraFocus::FocusModes mode) const
 {
+#ifdef HAVE_GST_PHOTOGRAPHY
+    QCameraFocus::FocusModes supportedFocusModes;
+
+    if (G_IS_OBJECT(m_session->cameraSource()) &&
+            G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+            g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-focus-modes")) {
+
+        GVariant *focus_modes;
+        g_object_get(G_OBJECT(m_session->cameraSource()), "supported-focus-modes", &focus_modes, NULL);
+
+        if (focus_modes){
+            int focus_count = g_variant_n_children(focus_modes);
+
+            for (int i = 0; i < focus_count; i++) {
+                GVariant *mode = g_variant_get_child_value(focus_modes, i);
+                supportedFocusModes |= m_focusMap[static_cast<GstPhotographyFocusMode>(g_variant_get_int32(mode))];
+                g_variant_unref(mode);
+            }
+        }
+        return mode & supportedFocusModes;
+    }
+#endif
     switch (mode) {
     case QCameraFocus::AutoFocus:
     case QCameraFocus::HyperfocalFocus:

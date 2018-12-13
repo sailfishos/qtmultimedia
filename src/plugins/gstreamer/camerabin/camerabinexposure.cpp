@@ -47,6 +47,32 @@ CameraBinExposure::CameraBinExposure(CameraBinSession *session)
     :QCameraExposureControl(session),
      m_session(session)
 {
+    if (m_session->photography()) {
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_MANUAL] = QCameraExposure::ExposureManual;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_AUTO] = QCameraExposure::ExposureAuto;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_CLOSEUP] = QCameraExposure::ExposureCloseup;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_PORTRAIT] = QCameraExposure::ExposurePortrait;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_LANDSCAPE] = QCameraExposure::ExposureLandscape;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_SPORT] = QCameraExposure::ExposureSports;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_NIGHT] = QCameraExposure::ExposureNight;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_ACTION] = QCameraExposure::ExposureAction;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_NIGHT_PORTRAIT] = QCameraExposure::ExposureNightPortrait;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_THEATRE] = QCameraExposure::ExposureTheatre;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_BEACH] = QCameraExposure::ExposureBeach;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_SNOW] = QCameraExposure::ExposureSnow;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_SUNSET] = QCameraExposure::ExposureSunset;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_STEADY_PHOTO] = QCameraExposure::ExposureSteadyPhoto;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_FIREWORKS] = QCameraExposure::ExposureFireworks;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_PARTY] = QCameraExposure::ExposureParty;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_CANDLELIGHT] = QCameraExposure::ExposureCandlelight;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_BARCODE] = QCameraExposure::ExposureBarcode;
+#if GST_CHECK_VERSION(1, 14, 0)
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_BACKLIGHT] = QCameraExposure::ExposureBacklight;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_FLOWERS] = QCameraExposure::ExposureFlowers;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_AR] = QCameraExposure::ExposureAR;
+        m_mappedExposureValues[GST_PHOTOGRAPHY_SCENE_MODE_HDR] = QCameraExposure::ExposureHDR;
+#endif
+    }
 }
 
 CameraBinExposure::~CameraBinExposure()
@@ -60,6 +86,9 @@ bool CameraBinExposure::isParameterSupported(ExposureParameter parameter) const
     case QCameraExposureControl::ISO:
     case QCameraExposureControl::Aperture:
     case QCameraExposureControl::ShutterSpeed:
+#ifdef HAVE_GST_PHOTOGRAPHY
+    case QCameraExposureControl::ExposureMode:
+#endif
         return true;
     default:
         return false;
@@ -73,6 +102,7 @@ QVariantList CameraBinExposure::supportedParameterRange(ExposureParameter parame
         *continuous = false;
 
     QVariantList res;
+
     switch (parameter) {
     case QCameraExposureControl::ExposureCompensation:
         if (continuous)
@@ -80,11 +110,52 @@ QVariantList CameraBinExposure::supportedParameterRange(ExposureParameter parame
         res << -2.0 << 2.0;
         break;
     case QCameraExposureControl::ISO:
+#ifdef HAVE_GST_PHOTOGRAPHY
+        if (G_IS_OBJECT(m_session->cameraSource()) &&
+                G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+                g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-iso-speeds")) {
+            GVariant *iso_modes;
+            g_object_get(G_OBJECT(m_session->cameraSource()), "supported-iso-speeds", &iso_modes, NULL);
+
+            if (iso_modes) {
+                int iso_mode_count = g_variant_n_children(iso_modes);
+
+                for (int i = 0; i < iso_mode_count; i++) {
+                    GVariant *mode = g_variant_get_child_value(iso_modes, i);
+                    res << g_variant_get_int32(mode);
+                    g_variant_unref(mode);
+                }
+            }
+        } else {
+            res << 100 << 200 << 400;
+        }
+#else
         res << 100 << 200 << 400;
+#endif
         break;
     case QCameraExposureControl::Aperture:
         res << 2.8;
         break;
+#ifdef HAVE_GST_PHOTOGRAPHY
+    case QCameraExposureControl::ExposureMode:
+        if (G_IS_OBJECT(m_session->cameraSource()) &&
+                G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
+                g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-scene-modes")) {
+            GVariant *exposure_modes;
+            g_object_get(G_OBJECT(m_session->cameraSource()), "supported-scene-modes", &exposure_modes, NULL);
+
+            if (exposure_modes) {
+                int exposure_mode_count = g_variant_n_children(exposure_modes);
+
+                for (int i = 0; i < exposure_mode_count; i++) {
+                    GVariant *mode = g_variant_get_child_value(exposure_modes, i);
+                    res << m_mappedExposureValues[static_cast<GstPhotographySceneMode>(g_variant_get_int32(mode))];
+                    g_variant_unref(mode);
+                }
+            }
+        }
+        break;
+#endif
     default:
         break;
     }
@@ -161,8 +232,18 @@ QVariant CameraBinExposure::actualValue(ExposureParameter parameter) const
         case GST_PHOTOGRAPHY_SCENE_MODE_BARCODE:
             return QVariant::fromValue(QCameraExposure::ExposureBarcode);
 #endif
-        //no direct mapping available so mapping to auto mode
+#if GST_CHECK_VERSION(1, 14, 0)
+        case GST_PHOTOGRAPHY_SCENE_MODE_BACKLIGHT:
+            return QVariant::fromValue(QCameraExposure::ExposureBacklight);
+        case GST_PHOTOGRAPHY_SCENE_MODE_FLOWERS:
+            return QVariant::fromValue(QCameraExposure::ExposureFlowers);
+        case GST_PHOTOGRAPHY_SCENE_MODE_AR:
+            return QVariant::fromValue(QCameraExposure::ExposureAR);
+        case GST_PHOTOGRAPHY_SCENE_MODE_HDR:
+            return QVariant::fromValue(QCameraExposure::ExposureHDR);
+#endif
         case GST_PHOTOGRAPHY_SCENE_MODE_CLOSEUP:
+            return QVariant::fromValue(QCameraExposure::ExposureCloseup);
         case GST_PHOTOGRAPHY_SCENE_MODE_AUTO:
         default:
             return QVariant::fromValue(QCameraExposure::ExposureAuto);
@@ -253,7 +334,23 @@ bool CameraBinExposure::setValue(ExposureParameter parameter, const QVariant& va
             sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_BARCODE;
             break;
 #endif
+#if GST_CHECK_VERSION(1, 14, 0)
+        case QCameraExposure::ExposureFlowers:
+            sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_FLOWERS;
+            break;
+        case QCameraExposure::ExposureBacklight:
+            sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_BACKLIGHT;
+            break;
+        case QCameraExposure::ExposureAR:
+            sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_AR;
+            break;
+        case QCameraExposure::ExposureHDR:
+            sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_HDR;
+            break;
+#endif
         default:
+            //Best option is probably to set auto mode for anything unknown
+            sceneMode = GST_PHOTOGRAPHY_SCENE_MODE_AUTO;
             break;
         }
 

@@ -66,6 +66,7 @@ public:
         WhiteBalanceFluorescent = 6,
         WhiteBalanceFlash = 7,
         WhiteBalanceSunset = 8,
+        WhiteBalanceWarmFluorescent = 9,
         WhiteBalanceVendor = 1000
     };
 
@@ -79,6 +80,9 @@ public:
         ColorFilterWhiteboard,
         ColorFilterBlackboard,
         ColorFilterAqua,
+        ColorFilterEmboss,
+        ColorFilterSketch,
+        ColorFilterNeon,
         ColorFilterVendor = 1000
     };
 

@@ -94,7 +94,7 @@
 #define VIEWFINDER_CAPS_PROPERTY "viewfinder-caps"
 #define PREVIEW_CAPS_PROPERTY "preview-caps"
 #define POST_PREVIEWS_PROPERTY "post-previews"
-
+#define MAX_FILESIZE_PROPERTY "max-size"
 
 #define CAPTURE_START "start-capture"
 #define CAPTURE_STOP "stop-capture"
@@ -1010,6 +1010,21 @@ void CameraBinSession::setMuted(bool muted)
         if (m_camerabin)
             g_object_set(G_OBJECT(m_camerabin), MUTE_PROPERTY, m_muted, NULL);
         emit mutedChanged(m_muted);
+    }
+}
+
+int CameraBinSession::maxSize() const
+{
+    return m_maxSize;
+}
+
+void CameraBinSession::setMaxSize(int maxSize)
+{
+    if (m_maxSize != maxSize) {
+        m_maxSize = maxSize;
+    if (m_camerabin)
+            g_object_set(G_OBJECT(m_camerabin), MAX_FILESIZE_PROPERTY, m_muted, NULL);
+       emit maxSizeChanged(m_maxSize);
     }
 }
 

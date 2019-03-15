@@ -49,6 +49,7 @@ QGstreamerRecorderControl::QGstreamerRecorderControl(QGstreamerCaptureSession *s
     connect(m_session, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged(qint64)));
     connect(m_session, SIGNAL(mutedChanged(bool)), SIGNAL(mutedChanged(bool)));
     connect(m_session, SIGNAL(volumeChanged(qreal)), SIGNAL(volumeChanged(qreal)));
+    connect(m_session, SIGNAL(maxSizeChanged(int)), SIGNAL(maxSizeChanged(int)));
     m_hasPreviewState = m_session->captureMode() != QGstreamerCaptureSession::Audio;
 }
 
@@ -318,6 +319,16 @@ void QGstreamerRecorderControl::setMuted(bool muted)
 void QGstreamerRecorderControl::setVolume(qreal volume)
 {
     m_session->setVolume(volume);
+}
+
+int QGstreamerRecorderControl::maxSize() const
+{
+    return m_session->maxSize();
+}
+
+void QGstreamerRecorderControl::setMaxSize(int maxSize)
+{
+    m_session->setMaxSize(maxSize);
 }
 
 QDir QGstreamerRecorderControl::defaultDir() const

@@ -66,6 +66,7 @@ class Q_MULTIMEDIA_EXPORT QMediaRecorder : public QObject, public QMediaBindable
     Q_PROPERTY(QMediaRecorder::State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QMediaRecorder::Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
+    Q_PROPERTY(int maxSize READ maxSize WRITE setMaxSize NOTIFY maxSizeChanged)
     Q_PROPERTY(QUrl outputLocation READ outputLocation WRITE setOutputLocation)
     Q_PROPERTY(QUrl actualLocation READ actualLocation NOTIFY actualLocationChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
@@ -121,6 +122,8 @@ public:
 
     qint64 duration() const;
 
+    int maxSize() const;
+
     bool isMuted() const;
     qreal volume() const;
 
@@ -167,11 +170,13 @@ public Q_SLOTS:
     void stop();
     void setMuted(bool muted);
     void setVolume(qreal volume);
+    void setMaxSize(int maxSize);
 
 Q_SIGNALS:
     void stateChanged(QMediaRecorder::State state);
     void statusChanged(QMediaRecorder::Status status);
     void durationChanged(qint64 duration);
+    void maxSizeChanged(int maxSize);
     void mutedChanged(bool muted);
     void volumeChanged(qreal volume);
     void actualLocationChanged(const QUrl &location);

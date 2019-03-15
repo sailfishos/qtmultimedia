@@ -156,6 +156,7 @@ public:
     void stopVideoRecording();
 
     bool isMuted() const;
+    int maxSize() const;
 
     QString device() const { return m_inputDevice; }
 
@@ -173,6 +174,7 @@ signals:
     void viewfinderChanged();
     void readyChanged(bool);
     void busyChanged(bool);
+    void maxSizeChanged(int);
     void handleReadyForCaptureChanged(bool);
 
 public slots:
@@ -181,6 +183,7 @@ public slots:
     void setCaptureDevice(const QString &deviceName);
     void setMetaData(const QMap<QByteArray, QVariant>&);
     void setMuted(bool);
+    void setMaxSize(int maxSize);
 
 private slots:
     void handleViewfinderChange();
@@ -220,6 +223,7 @@ private:
     QCamera::State m_acceptedState;     // The current state or the state the pipeline is actively transitioning to.
     QString m_inputDevice;
     bool m_muted;
+    int m_maxSize;
     bool m_readyForCapture;
     QMediaStorageLocation m_mediaStorageLocation;
 

@@ -65,12 +65,15 @@ public:
     virtual bool isMuted() const = 0;
     virtual qreal volume() const = 0;
 
+    virtual int maxSize() const = 0;
+
     virtual void applySettings() = 0;
 
 Q_SIGNALS:
     void stateChanged(QMediaRecorder::State state);
     void statusChanged(QMediaRecorder::Status status);
     void durationChanged(qint64 position);
+    void maxSizeChanged(int maxSize);
     void mutedChanged(bool muted);
     void volumeChanged(qreal volume);
     void actualLocationChanged(const QUrl &location);
@@ -80,6 +83,7 @@ public Q_SLOTS:
     virtual void setState(QMediaRecorder::State state) = 0;
     virtual void setMuted(bool muted) = 0;
     virtual void setVolume(qreal volume) = 0;
+    virtual void setMaxSize(int maxSize) = 0;
 
 protected:
     explicit QMediaRecorderControl(QObject *parent = Q_NULLPTR);

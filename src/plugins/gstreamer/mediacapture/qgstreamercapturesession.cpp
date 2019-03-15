@@ -77,11 +77,13 @@ QGstreamerCaptureSession::QGstreamerCaptureSession(QGstreamerCaptureSession::Cap
      m_audioVolume(0),
      m_muted(false),
      m_volume(1.0),
+     m_maxSize(0),
      m_videoSrc(0),
      m_videoTee(0),
      m_videoPreviewQueue(0),
      m_videoPreview(0),
      m_imageCaptureBin(0),
+     m_splitMuxSink(0),
      m_encodeBin(0),
      m_passImage(false),
      m_passPrerollImage(false)
@@ -128,14 +130,17 @@ GstElement *QGstreamerCaptureSession::buildEncodeBin()
 
     // Output location was rejected in setOutputlocation() if not a local file
     QUrl actualSink = QUrl::fromLocalFile(QDir::currentPath()).resolved(m_sink);
-    GstElement *fileSink = gst_element_factory_make("filesink", "filesink");
-    g_object_set(G_OBJECT(fileSink), "location", QFile::encodeName(actualSink.toLocalFile()).constData(), NULL);
-    gst_bin_add_many(GST_BIN(encodeBin), muxer, fileSink,  NULL);
-
-    if (!gst_element_link(muxer, fileSink)) {
-        gst_object_unref(encodeBin);
-        return 0;
+    if (m_splitMuxSink) {
+        gst_object_unref(m_splitMuxSink);
+        m_splitMuxSink = 0;
     }
+    m_splitMuxSink = gst_element_factory_make("splitmuxsink", "splitmuxsink");
+    g_object_set(G_OBJECT(m_splitMuxSink), "location", QFile::encodeName(actualSink.toLocalFile()).constData(), NULL);
+    g_object_set(G_OBJECT(m_splitMuxSink), "max-size-bytes", m_maxSize*1024*1024, NULL);
+    g_object_set(G_OBJECT(m_splitMuxSink), "use-robust-muxing", TRUE, NULL);
+    g_object_set(G_OBJECT(m_splitMuxSink), "muxer", G_OBJECT(muxer), NULL);
+    g_object_set(G_OBJECT(encodeBin), "renderer", G_OBJECT(m_splitMuxSink), NULL);
+    gst_object_ref(m_splitMuxSink);
 
     if (m_captureMode & Audio) {
         GstElement *audioConvert = gst_element_factory_make("audioconvert", "audioconvert");
@@ -649,6 +654,7 @@ bool QGstreamerCaptureSession::rebuildGraph(QGstreamerCaptureSession::PipelineMo
         REMOVE_ELEMENT(m_videoPreview);
         REMOVE_ELEMENT(m_videoPreviewQueue);
         REMOVE_ELEMENT(m_videoTee);
+        REMOVE_ELEMENT(m_splitMuxSink);
         REMOVE_ELEMENT(m_encodeBin);
     }
 
@@ -830,6 +836,20 @@ qint64 QGstreamerCaptureSession::duration() const
         return duration / 1000000;
     else
         return 0;
+}
+
+void QGstreamerCaptureSession::setMaxSize(int maxSize)
+{
+    if (m_maxSize != maxSize) {
+        qWarning() << "Setting max recording size to " << maxSize;
+        m_maxSize = maxSize;
+        if (m_splitMuxSink) {
+            g_object_set(G_OBJECT(m_splitMuxSink), "max-size-bytes", m_maxSize, NULL);
+            qWarning() << "Updating max recording size in splitmuxsink";
+
+        }
+        emit maxSizeChanged(m_maxSize);
+    }
 }
 
 void QGstreamerCaptureSession::setCaptureDevice(const QString &deviceName)

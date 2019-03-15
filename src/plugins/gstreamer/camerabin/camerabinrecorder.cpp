@@ -56,6 +56,7 @@ CameraBinRecorder::CameraBinRecorder(CameraBinSession *session)
     connect(m_session, SIGNAL(mutedChanged(bool)), this, SIGNAL(mutedChanged(bool)));
     connect(m_session->resourcePolicy(), SIGNAL(canCaptureChanged()),
             this, SLOT(updateStatus()));
+    connect(m_session, SIGNAL(maxSizeChanged(int)), SIGNAL(maxSizeChanged(int)));
 }
 
 CameraBinRecorder::~CameraBinRecorder()
@@ -248,6 +249,11 @@ qreal CameraBinRecorder::volume() const
     return 1.0;
 }
 
+int CameraBinRecorder::maxSize() const
+{
+    return m_session->maxSize();
+}
+
 void CameraBinRecorder::setMuted(bool muted)
 {
     m_session->setMuted(muted);
@@ -257,6 +263,11 @@ void CameraBinRecorder::setVolume(qreal volume)
 {
     if (!qFuzzyCompare(volume, qreal(1.0)))
         qWarning() << "Media service doesn't support recorder audio gain.";
+}
+
+void CameraBinRecorder::setMaxSize(int maxSize)
+{
+    m_session->setMaxSize(maxSize);
 }
 
 QT_END_NAMESPACE

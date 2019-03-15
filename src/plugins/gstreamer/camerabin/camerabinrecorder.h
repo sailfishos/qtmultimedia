@@ -62,6 +62,7 @@ public:
 
     bool isMuted() const;
     qreal volume() const;
+    int maxSize() const;
 
     void applySettings();
 
@@ -73,6 +74,7 @@ public slots:
     void setState(QMediaRecorder::State state);
     void setMuted(bool);
     void setVolume(qreal volume);
+    void setMaxSize(int maxSize);
 
     void updateStatus();
 

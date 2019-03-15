@@ -79,6 +79,7 @@ class QGstreamerCaptureSession
 {
     Q_OBJECT
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
+    Q_PROPERTY(int maxSize READ maxSize WRITE setMaxSize NOTIFY maxSizeChanged)
     Q_ENUMS(State)
     Q_ENUMS(CaptureMode)
     Q_INTERFACES(QGstreamerBusMessageFilter)
@@ -129,6 +130,7 @@ public:
     qint64 duration() const;
     bool isMuted() const { return m_muted; }
     qreal volume() const { return m_volume; }
+    int maxSize() const { return m_maxSize; }
 
     bool isReady() const;
 
@@ -140,6 +142,7 @@ public:
 signals:
     void stateChanged(QGstreamerCaptureSession::State state);
     void durationChanged(qint64 duration);
+    void maxSizeChanged(int maxSize);
     void error(int error, const QString &errorString);
     void imageExposed(int requestId);
     void imageCaptured(int requestId, const QImage &img);
@@ -158,6 +161,7 @@ public slots:
     void setMetaData(const QMap<QByteArray, QVariant>&);
     void setMuted(bool);
     void setVolume(qreal volume);
+    void setMaxSize(int maxSize);
 
 private:
     void probeCaps(GstCaps *caps);
@@ -210,8 +214,10 @@ private:
     GstElement *m_audioPreviewQueue;
     GstElement *m_audioPreview;
     GstElement *m_audioVolume;
+    GstElement *m_splitMuxSink;
     gboolean m_muted;
     double m_volume;
+    int m_maxSize;
 
     GstElement *m_videoSrc;
     GstElement *m_videoTee;

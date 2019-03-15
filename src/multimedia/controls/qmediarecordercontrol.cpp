@@ -164,6 +164,18 @@ QMediaRecorderControl::~QMediaRecorderControl()
 */
 
 /*!
+    \fn int QMediaRecorderControl::maxSize() const
+
+    The filesize at which to rollover to a new file.
+*/
+
+/*!
+    \fn void QMediaRecorderControl::setMaxSize(int maxSize)
+
+    Sets the filesize at which to rollover to a new file.
+*/
+
+/*!
     \fn void QMediaRecorderControl::stateChanged(QMediaRecorder::State state)
 
     Signals that the \a state of a media recorder has changed.

@@ -79,6 +79,7 @@ class QDeclarativeCameraRecorder : public QObject
     Q_PROPERTY(QString mediaContainer READ mediaContainer WRITE setMediaContainer NOTIFY mediaContainerChanged)
 
     Q_PROPERTY(qint64 duration READ duration NOTIFY durationChanged)
+    Q_PROPERTY(int maxSize READ maxSize WRITE setMaxSize NOTIFY maxSizeChanged)
     Q_PROPERTY(QString outputLocation READ outputLocation WRITE setOutputLocation NOTIFY outputLocationChanged)
     Q_PROPERTY(QString actualLocation READ actualLocation NOTIFY actualLocationChanged)
     Q_PROPERTY(bool muted READ isMuted WRITE setMuted NOTIFY mutedChanged)
@@ -129,6 +130,7 @@ public:
     QString actualLocation() const;
 
     qint64 duration() const;
+    int maxSize() const;
     bool isMuted() const;
 
     QString audioCodec() const;
@@ -168,6 +170,8 @@ public Q_SLOTS:
     void setAudioChannels(int channels);
     void setAudioSampleRate(int rate);
 
+    void setMaxSize(int maxSize);
+
     void setVideoEncodingMode(EncodingMode encodingMode);
     void setAudioEncodingMode(EncodingMode encodingMode);
 
@@ -175,6 +179,7 @@ Q_SIGNALS:
     void recorderStateChanged(QDeclarativeCameraRecorder::RecorderState state);
     void recorderStatusChanged();
     void durationChanged(qint64 duration);
+    void maxSizeChanged(int maxSizeBytes);
     void mutedChanged(bool muted);
     void outputLocationChanged(const QString &location);
     void actualLocationChanged(const QString &location);

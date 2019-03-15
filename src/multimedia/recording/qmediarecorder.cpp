@@ -570,6 +570,27 @@ void QMediaRecorder::setVolume(qreal volume)
 }
 
 /*!
+    \property QMediaRecorder::maxSize
+
+    \brief The file size at which to roll to a new file.
+*/
+
+int QMediaRecorder::maxSize() const
+{
+    return d_func()->control ? d_func()->control->maxSize() : 0;
+}
+
+
+void QMediaRecorder::setMaxSize(int maxSize)
+{
+    Q_D(QMediaRecorder);
+
+    if (d->control) {
+        d->control->setMaxSize(maxSize);
+    }
+}
+
+/*!
     Returns a list of supported container formats.
 */
 QStringList QMediaRecorder::supportedContainers() const

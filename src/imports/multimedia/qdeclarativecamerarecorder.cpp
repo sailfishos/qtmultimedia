@@ -80,6 +80,7 @@ QDeclarativeCameraRecorder::QDeclarativeCameraRecorder(QCamera *camera, QObject 
             SLOT(updateRecorderError(QMediaRecorder::Error)));
     connect(m_recorder, SIGNAL(mutedChanged(bool)), SIGNAL(mutedChanged(bool)));
     connect(m_recorder, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged(qint64)));
+    connect(m_recorder, SIGNAL(maxSizeChanged(int)), SIGNAL(maxSizeChanged(int)));
     connect(m_recorder, SIGNAL(actualLocationChanged(QUrl)),
             SLOT(updateActualLocation(QUrl)));
     connect(m_recorder, SIGNAL(metaDataChanged(QString,QVariant)),
@@ -529,6 +530,28 @@ void QDeclarativeCameraRecorder::setOutputLocation(const QString &location)
 qint64 QDeclarativeCameraRecorder::duration() const
 {
     return m_recorder->duration();
+}
+
+/*!
+    \property QDeclarativeCameraRecorder::maxSize
+
+    This property holds the maximum file size (in megabytes). Recording will
+    roll over into a new sequentially numbered file before this is exceeded.
+*/
+/*!
+    \qmlproperty int QtMultimedia::CameraRecorder::maxSize
+
+    This property holds the maximum file size (in megabytes). Recording will
+    roll over into a new sequentially numbered file before this is exceeded.
+*/
+int QDeclarativeCameraRecorder::maxSize() const
+{
+    return m_recorder->maxSize();
+}
+
+void QDeclarativeCameraRecorder::setMaxSize(int maxSize)
+{
+    m_recorder->setMaxSize(maxSize);
 }
 /*!
     \property QDeclarativeCameraRecorder::muted

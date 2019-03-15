@@ -60,8 +60,12 @@ public:
 
     bool isMuted() const;
     qreal volume() const;
+    int maxSize() const;
 
     void applySettings();
+
+signals:
+    void maxSizeChanged(int maxSize);
 
 public slots:
     void setState(QMediaRecorder::State state);
@@ -70,6 +74,7 @@ public slots:
     void stop();
     void setMuted(bool);
     void setVolume(qreal volume);
+    void setMaxSize(int maxSize);
 
 private slots:
     void updateStatus();

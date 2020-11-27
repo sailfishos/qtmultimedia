@@ -2,9 +2,8 @@ Name:       qt5-qtmultimedia
 Summary:    Qt Multimedia module
 Version:    5.6.2
 Release:    1%{?dist}
-Group:      Qt/Qt
-License:    LGPLv2.1 with exception or GPLv3
-URL:        http://qt.nokia.com
+License:    (LGPLv2 or LGPLv3) with exception or GPLv3 or Qt Commercial
+URL:        https://www.qt.io/
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  qt5-qtcore-devel
 BuildRequires:  qt5-qtgui-devel
@@ -37,7 +36,6 @@ This package contains the QtMultimedia module
 
 %package devel
 Summary:    Qt Multimedia - development files
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-plugin-audio-alsa = %{version}-%{release}
 Requires:   qt5-qtmultimedia-plugin-audio-pulseaudio = %{version}-%{release}
@@ -57,7 +55,6 @@ This package contains the QtMultimedia module development files
 
 %package -n qt5-qtdeclarative-import-multimedia
 Summary:    QtQml multimedia import
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtdeclarative
 
@@ -66,7 +63,6 @@ This package contains the Multimedia import for QtQml
 
 %package gsttools
 Summary:    Qt Multimedia - Utility library for GStreamer media services
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
 %description gsttools
@@ -74,7 +70,6 @@ This package contains a shared library for the GStreamer QtMultimedia media serv
 
 %package plugin-mediaservice-gstaudiodecoder
 Summary:    Qt Multimedia - GStreamer audio decoder media service
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
@@ -83,7 +78,6 @@ This package contains the GStreamer audio decoder plugin for QtMultimedia
 
 %package plugin-resourcepolicy-resourceqt
 Summary:    Qt Multimedia - libresourceqt resource policy plugin
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
 %description plugin-resourcepolicy-resourceqt
@@ -91,7 +85,6 @@ This package contains the libresourceqt resource policy plugin for QtMultimedia
 
 %package plugin-mediaservice-gstcamerabin
 Summary:    Qt Multimedia - GStreamer camerabin video capture media service
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
@@ -100,7 +93,6 @@ This package contains the GStreamer camerabin video capture plugin for QtMultime
 
 %package plugin-mediaservice-gstmediacapture
 Summary:    Qt Multimedia - GStreamer video4linux2 video capture media service
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
@@ -109,7 +101,6 @@ This package contains the GStreamer video4linux2 video capture plugin for QtMult
 
 %package plugin-mediaservice-gstmediaplayer
 Summary:    Qt Multimedia - GStreamer playback media service
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
@@ -118,7 +109,6 @@ This package contains the GStreamer media playback plugin for QtMultimedia
 
 %package plugin-playlistformats-m3u
 Summary:    Qt Multimedia - M3U playlist support
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
 
@@ -127,7 +117,6 @@ This package contains the M3U playlist support
 
 %package plugin-audio-pulseaudio
 Summary:    Qt Multimedia - Pulse Audio plugin
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
 %description plugin-audio-pulseaudio
@@ -135,7 +124,6 @@ This package contains the pulse audio sound effect support.
 
 %package plugin-audio-alsa
 Summary:    Qt Multimedia - Alsa audio plugin
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
 %description plugin-audio-alsa
@@ -143,7 +131,6 @@ This package contains the alsa sound effect support.
 
 %package plugin-video-eglvideonode
 Summary:    Qt Multimedia - eglvideonode plugin
-Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 
 %description plugin-video-eglvideonode
@@ -198,6 +185,8 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
 %files
 %defattr(-,root,root,-)
+%license LICENSE.LGPLv* LGPL_EXCEPTION.txt
+%license LICENSE.GPLv3 LICENSE.FDL
 %{_libdir}/libQt5Multimedia.so.5
 %{_libdir}/libQt5Multimedia.so.5.*
 %{_libdir}/libQt5MultimediaQuick_p.so.5

@@ -421,6 +421,11 @@ void CameraBinSession::setupCaptureResolution()
 
     if (m_videoEncoder)
         m_videoEncodeControl->applySettings(m_videoEncoder);
+
+    // Special case when using droidcamsrc as camera source which does the encoding
+    if (m_cameraSrc && qstrcmp(qt_gst_element_get_factory_name(m_cameraSrc), "droidcamsrc") == 0) {
+        m_videoEncodeControl->applySettings(m_cameraSrc);
+    }
 }
 
 void CameraBinSession::setAudioCaptureCaps()

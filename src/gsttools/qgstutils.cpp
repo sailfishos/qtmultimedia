@@ -530,24 +530,20 @@ QVector<QGstUtils::CameraInfo> QGstUtils::enumerateCameras(GstElementFactory *fa
                 ? static_cast<GObjectClass *>(g_type_class_ref(type))
                 : 0;
         if (objectClass) {
-            if (g_object_class_find_property(objectClass, "camera-device")) {
-                const CameraInfo primary = {
-                    QStringLiteral("primary"),
-                    QGstreamerVideoInputDeviceControl::primaryCamera(),
-                    0,
-                    QCamera::BackFace,
-                    QByteArray()
-                };
-                const CameraInfo secondary = {
-                    QStringLiteral("secondary"),
-                    QGstreamerVideoInputDeviceControl::secondaryCamera(),
-                    0,
-                    QCamera::FrontFace,
-                    QByteArray()
-                };
+            if (GParamSpec *param = g_object_class_find_property(objectClass, "camera-device")) {
+                int max = G_PARAM_SPEC_INT (param)->maximum;
 
-                devices.append(primary);
-                devices.append(secondary);
+                for (int i = 0; i < max; i++) {
+                    const CameraInfo info = {
+                            QString::number(i),
+                            QString::number(i),
+                            0,
+                            QCamera::UnspecifiedPosition,
+                            QByteArray()
+                    };
+
+                    devices.append(info);
+                }
 
                 GstElement *camera = g_object_class_find_property(objectClass, "sensor-mount-angle")
                         ? gst_element_factory_create(factory, 0)
@@ -555,12 +551,15 @@ QVector<QGstUtils::CameraInfo> QGstUtils::enumerateCameras(GstElementFactory *fa
                 if (camera) {
                     if (gst_element_set_state(camera, GST_STATE_READY) != GST_STATE_CHANGE_SUCCESS) {
                         // no-op
-                    } else for (int i = 0; i < 2; ++i) {
+                    } else for (int i = 0; i < max; ++i) {
                         gint orientation = 0;
+                        gint direction = QCamera::UnspecifiedPosition;
                         g_object_set(G_OBJECT(camera), "camera-device", i, NULL);
                         g_object_get(G_OBJECT(camera), "sensor-mount-angle", &orientation, NULL);
+                        g_object_get(G_OBJECT(camera), "sensor-direction", &direction, NULL);
 
                         devices[i].orientation = (720 - orientation) % 360;
+                        devices[i].position = direction == 1 ? QCamera::FrontFace : QCamera::BackFace;
                     }
                     gst_element_set_state(camera, GST_STATE_NULL);
                     gst_object_unref(GST_OBJECT(camera));

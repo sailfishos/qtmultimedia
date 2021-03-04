@@ -536,11 +536,7 @@ GstElement *CameraBinSession::buildCameraSource()
                 g_object_set(G_OBJECT(m_videoSrc), "device", m_inputDevice.toUtf8().constData(), NULL);
 
         } else if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_cameraSrc), "camera-device")) {
-            if (m_inputDevice == QLatin1String("secondary")) {
-                g_object_set(G_OBJECT(m_cameraSrc), "camera-device", 1, NULL);
-            } else {
-                g_object_set(G_OBJECT(m_cameraSrc), "camera-device", 0, NULL);
-            }
+            g_object_set(G_OBJECT(m_cameraSrc), "camera-device", m_inputDevice.toInt(), NULL);
         }
     }
 

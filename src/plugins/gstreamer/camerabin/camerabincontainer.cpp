@@ -50,6 +50,7 @@ CameraBinContainer::CameraBinContainer(QObject *parent)
     m_fileExtensions["video/x-msvideo"] = "avi";
     m_fileExtensions["video/msvideo"] = "avi";
     m_fileExtensions["audio/mpeg"] = "mp3";
+    m_fileExtensions["video/quicktime, variant=(string)iso"] = "mp4";
     m_fileExtensions["application/x-shockwave-flash"] = "swf";
     m_fileExtensions["application/x-pn-realmedia"] = "rm";
 }
@@ -155,18 +156,23 @@ QString CameraBinContainer::suggestedFileExtension(const QString &containerForma
     if (!containerFormat.contains('/'))
         return containerFormat;
 
-    QString format = containerFormat.left(containerFormat.indexOf(','));
-    QString extension = m_fileExtensions.value(format);
+    foreach (const QString &singleFormat, containerFormat.split("; ")) {
+        if (m_fileExtensions.contains(singleFormat))
+            return m_fileExtensions.value(singleFormat);
 
-    if (!extension.isEmpty() || format.isEmpty())
-        return extension;
+        QString format = containerFormat.left(singleFormat.indexOf(','));
+        QString extension = m_fileExtensions.value(format);
 
-    QRegExp rx("[-/]([\\w]+)$");
+        if (!extension.isEmpty())
+            return extension;
+    }
 
-    if (rx.indexIn(format) != -1)
-        extension = rx.cap(1);
+    QRegExp rx("[-/]([\\w]+)($|[;,] )");
 
-    return extension;
+    if (rx.indexIn(containerFormat) != -1)
+        return rx.cap(1);
+
+    return containerFormat;
 }
 
 QT_END_NAMESPACE

@@ -142,20 +142,21 @@ void CameraBinRecorder::applySettings()
     //encodebin doesn't like the encoding profile with ANY caps,
     //if container and codecs are not specified,
     //try to find a commonly used supported combination
-    if (containerControl->containerFormat().isEmpty() &&
-            audioEncoderControl->audioSettings().codec().isEmpty() &&
+    if (audioEncoderControl->audioSettings().codec().isEmpty() &&
             videoEncoderControl->videoSettings().codec().isEmpty()) {
 
         QList<QStringList> candidates;
         candidates.append(QStringList() << "video/x-matroska" << "video/x-h264" << "audio/mpeg, mpegversion=(int)4");
         candidates.append(QStringList() << "video/webm" << "video/x-vp8" << "audio/x-vorbis");
         candidates.append(QStringList() << "application/ogg" << "video/x-theora" << "audio/x-vorbis");
-        candidates.append(QStringList() << "video/quicktime" << "video/x-h264" << "audio/mpeg, mpegversion=(int)4");
+        candidates.append(QStringList() << "video/quicktime, variant=(string)iso" << "video/x-h264" << "audio/mpeg, mpegversion=(int)4");
         candidates.append(QStringList() << "video/quicktime" << "video/x-h264" << "audio/mpeg");
         candidates.append(QStringList() << "video/x-msvideo" << "video/x-divx" << "audio/mpeg");
 
         foreach (const QStringList &candidate, candidates) {
-            if (containerControl->supportedContainers().contains(candidate[0]) &&
+            if ((containerControl->actualContainerFormat().isEmpty() ||
+                        containerControl->actualContainerFormat() == candidate[0]) &&
+                    containerControl->supportedContainers().contains(candidate[0]) &&
                     videoEncoderControl->supportedVideoCodecs().contains(candidate[1]) &&
                     audioEncoderControl->supportedAudioCodecs().contains(candidate[2])) {
                 containerControl->setActualContainerFormat(candidate[0]);

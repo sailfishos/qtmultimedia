@@ -104,7 +104,22 @@ void CameraBinContainer::setActualContainerFormat(const QString &containerFormat
 
 void CameraBinContainer::resetActualContainerFormat()
 {
-    m_actualFormat = m_format;
+    QString format = m_format;
+    QStringList supportedFormats = m_supportedContainers.supportedCodecs();
+
+    //if format is not in the list of supported gstreamer mime types,
+    //try to find the mime type with matching extension
+    if (!supportedFormats.contains(format)) {
+        QString extension = suggestedFileExtension(m_actualFormat);
+        foreach (const QString &formatCandidate, supportedFormats) {
+            if (suggestedFileExtension(formatCandidate) == extension) {
+                format = formatCandidate;
+                break;
+            }
+        }
+    }
+
+    m_actualFormat = format;
 }
 
 #ifdef HAVE_GST_ENCODING_PROFILES
@@ -116,22 +131,7 @@ GstEncodingContainerProfile *CameraBinContainer::createProfile()
     if (m_actualFormat.isEmpty()) {
         return 0;
     } else {
-        QString format = m_actualFormat;
-        QStringList supportedFormats = m_supportedContainers.supportedCodecs();
-
-        //if format is not in the list of supported gstreamer mime types,
-        //try to find the mime type with matching extension
-        if (!supportedFormats.contains(format)) {
-            QString extension = suggestedFileExtension(m_actualFormat);
-            foreach (const QString &formatCandidate, supportedFormats) {
-                if (suggestedFileExtension(formatCandidate) == extension) {
-                    format = formatCandidate;
-                    break;
-                }
-            }
-        }
-
-        caps = gst_caps_from_string(format.toLatin1());
+        caps = gst_caps_from_string(m_actualFormat.toLatin1());
     }
 
     GstEncodingContainerProfile *profile = (GstEncodingContainerProfile *)gst_encoding_container_profile_new(

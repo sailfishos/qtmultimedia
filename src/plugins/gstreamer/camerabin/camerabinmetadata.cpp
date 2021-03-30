@@ -103,6 +103,7 @@ static const QGStreamerMetaDataKeys *qt_gstreamerMetaDataKeys()
         metadataKeys->append(QGStreamerMetaDataKey(QMediaMetaData::Comment, GST_TAG_COMMENT, QVariant::String));
 #if GST_CHECK_VERSION(0,10,31)
         metadataKeys->append(QGStreamerMetaDataKey(QMediaMetaData::Date, GST_TAG_DATE_TIME, QVariant::DateTime));
+        metadataKeys->append(QGStreamerMetaDataKey(QMediaMetaData::DateTimeOriginal, GST_TAG_DATE_TIME, QVariant::DateTime));
 #endif
         metadataKeys->append(QGStreamerMetaDataKey(QMediaMetaData::Description, GST_TAG_DESCRIPTION, QVariant::String));
         //metadataKeys->append(QGStreamerMetaDataKey(QMediaMetaData::Category, 0, QVariant::String));

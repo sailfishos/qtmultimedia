@@ -187,7 +187,7 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
                     m_volumeElement = m_playbin;
                 }
             }
-#if !GST_CHECK_VERSION(1,4,2)
+#if GST_CHECK_VERSION(1,4,2)
             GstElement* scale = gst_element_factory_make("scaletempo", NULL);
             if (scale) {
                 g_object_set(G_OBJECT(m_playbin), "audio-filter", scale, NULL);

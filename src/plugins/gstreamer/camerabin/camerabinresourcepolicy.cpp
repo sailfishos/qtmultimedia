@@ -155,7 +155,8 @@ void CamerabinResourcePolicy::setResourceSet(CamerabinResourcePolicy::ResourceSe
 
     m_resource->update();
     if (set != NoResources) {
-        m_resource->acquire();
+        if (!m_releasingResources)
+            m_resource->acquire();
     } else {
         if (oldSet != NoResources) {
             m_releasingResources = true;
@@ -197,6 +198,8 @@ void CamerabinResourcePolicy::handleResourcesReleased()
     qDebug() << Q_FUNC_INFO;
 #endif
     m_releasingResources = false;
+    if (m_resourceSet != NoResources)
+        setResourceSet(m_resourceSet);
 #endif
     updateCanCapture();
 }

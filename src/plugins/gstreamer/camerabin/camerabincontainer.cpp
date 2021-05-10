@@ -50,6 +50,7 @@ CameraBinContainer::CameraBinContainer(QObject *parent)
     m_fileExtensions["video/x-msvideo"] = "avi";
     m_fileExtensions["video/msvideo"] = "avi";
     m_fileExtensions["audio/mpeg"] = "mp3";
+    m_fileExtensions["video/quicktime, variant=(string)iso"] = "mp4";
     m_fileExtensions["application/x-shockwave-flash"] = "swf";
     m_fileExtensions["application/x-pn-realmedia"] = "rm";
 }
@@ -103,7 +104,22 @@ void CameraBinContainer::setActualContainerFormat(const QString &containerFormat
 
 void CameraBinContainer::resetActualContainerFormat()
 {
-    m_actualFormat = m_format;
+    QString format = m_format;
+    QStringList supportedFormats = m_supportedContainers.supportedCodecs();
+
+    //if format is not in the list of supported gstreamer mime types,
+    //try to find the mime type with matching extension
+    if (!supportedFormats.contains(format)) {
+        QString extension = suggestedFileExtension(m_actualFormat);
+        foreach (const QString &formatCandidate, supportedFormats) {
+            if (suggestedFileExtension(formatCandidate) == extension) {
+                format = formatCandidate;
+                break;
+            }
+        }
+    }
+
+    m_actualFormat = format;
 }
 
 #ifdef HAVE_GST_ENCODING_PROFILES
@@ -115,22 +131,7 @@ GstEncodingContainerProfile *CameraBinContainer::createProfile()
     if (m_actualFormat.isEmpty()) {
         return 0;
     } else {
-        QString format = m_actualFormat;
-        QStringList supportedFormats = m_supportedContainers.supportedCodecs();
-
-        //if format is not in the list of supported gstreamer mime types,
-        //try to find the mime type with matching extension
-        if (!supportedFormats.contains(format)) {
-            QString extension = suggestedFileExtension(m_actualFormat);
-            foreach (const QString &formatCandidate, supportedFormats) {
-                if (suggestedFileExtension(formatCandidate) == extension) {
-                    format = formatCandidate;
-                    break;
-                }
-            }
-        }
-
-        caps = gst_caps_from_string(format.toLatin1());
+        caps = gst_caps_from_string(m_actualFormat.toLatin1());
     }
 
     GstEncodingContainerProfile *profile = (GstEncodingContainerProfile *)gst_encoding_container_profile_new(
@@ -155,18 +156,23 @@ QString CameraBinContainer::suggestedFileExtension(const QString &containerForma
     if (!containerFormat.contains('/'))
         return containerFormat;
 
-    QString format = containerFormat.left(containerFormat.indexOf(','));
-    QString extension = m_fileExtensions.value(format);
+    foreach (const QString &singleFormat, containerFormat.split("; ")) {
+        if (m_fileExtensions.contains(singleFormat))
+            return m_fileExtensions.value(singleFormat);
 
-    if (!extension.isEmpty() || format.isEmpty())
-        return extension;
+        QString format = containerFormat.left(singleFormat.indexOf(','));
+        QString extension = m_fileExtensions.value(format);
 
-    QRegExp rx("[-/]([\\w]+)$");
+        if (!extension.isEmpty())
+            return extension;
+    }
 
-    if (rx.indexIn(format) != -1)
-        extension = rx.cap(1);
+    QRegExp rx("[-/]([\\w]+)($|[;,] )");
 
-    return extension;
+    if (rx.indexIn(containerFormat) != -1)
+        return rx.cap(1);
+
+    return containerFormat;
 }
 
 QT_END_NAMESPACE

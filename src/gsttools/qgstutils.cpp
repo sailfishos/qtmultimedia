@@ -533,7 +533,7 @@ QVector<QGstUtils::CameraInfo> QGstUtils::enumerateCameras(GstElementFactory *fa
             if (GParamSpec *param = g_object_class_find_property(objectClass, "camera-device")) {
                 int max = G_PARAM_SPEC_INT (param)->maximum;
 
-                for (int i = 0; i < max; i++) {
+                for (int i = 0; i <= max; i++) {
                     const CameraInfo info = {
                             QString::number(i),
                             QString::number(i),
@@ -551,7 +551,7 @@ QVector<QGstUtils::CameraInfo> QGstUtils::enumerateCameras(GstElementFactory *fa
                 if (camera) {
                     if (gst_element_set_state(camera, GST_STATE_READY) != GST_STATE_CHANGE_SUCCESS) {
                         // no-op
-                    } else for (int i = 0; i < max; ++i) {
+                    } else for (int i = 0; i <= max; ++i) {
                         gint orientation = 0;
                         gint direction = QCamera::UnspecifiedPosition;
                         g_object_set(G_OBJECT(camera), "camera-device", i, NULL);

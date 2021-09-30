@@ -110,14 +110,6 @@ void CameraBinFlash::setFlashMode(QCameraExposure::FlashModes mode)
 
 bool CameraBinFlash::isFlashModeSupported(QCameraExposure::FlashModes mode) const
 {
-
-    //torch light is allowed only in video capture mode
-    if (m_session->captureMode() == QCamera::CaptureVideo) {
-        if (mode == QCameraExposure::FlashTorch ||
-            mode == QCameraExposure::FlashTorch | QCameraExposure::FlashOff)
-            return true;
-    }
-
 #ifdef HAVE_GST_PHOTOGRAPHY
     //QList<QCameraExposure::FlashMode> supportedFlash;
     QCameraExposure::FlashModes supportedModes;
@@ -137,10 +129,24 @@ bool CameraBinFlash::isFlashModeSupported(QCameraExposure::FlashModes mode) cons
                 g_variant_unref(mode);
             }
         }
+        // Disable FlashOn and FlashAuto for video capture mode, FlashTorch is used instead
+        if (m_session->captureMode() == QCamera::CaptureVideo) {
+            // gstreamer doesn't have support for reporting torch light, report it always if flash is supported
+            if (supportedModes.testFlag(QCameraExposure::FlashOn)) {
+                supportedModes |= QCameraExposure::FlashTorch;
+            }
+            supportedModes &= ~(QCameraExposure::FlashOn | QCameraExposure::FlashAuto);
+        }
         return mode & supportedModes;
     }
-
 #endif
+
+    //torch light is allowed only in video capture mode
+    if (m_session->captureMode() == QCamera::CaptureVideo) {
+        if (mode == QCameraExposure::FlashTorch ||
+            mode == QCameraExposure::FlashTorch | QCameraExposure::FlashOff)
+            return true;
+    }
 
     return  mode == QCameraExposure::FlashOff ||
             mode == QCameraExposure::FlashOn ||

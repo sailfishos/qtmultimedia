@@ -1624,6 +1624,17 @@ void CameraBinSession::elementAdded(GstBin *, GstElement *element, CameraBinSess
     } else if (strstr(gst_element_factory_get_klass(factory), "Muxer") != NULL) {
 #endif
         session->m_muxer = element;
+#if GST_CHECK_VERSION(0,10,31)
+    } else if (gst_element_factory_list_is_type(factory, GST_ELEMENT_FACTORY_TYPE_SRC)) {
+#else
+    } else if (strstr(gst_element_factory_get_klass(factory), "Source") != NULL) {
+#endif
+        // Apply stream property for PulseAudio source
+        if (!g_strcmp0(G_OBJECT_TYPE_NAME(G_OBJECT(element)), "GstPulseSrc")) {
+            GstStructure *properties = gst_structure_from_string("props,audio.source=camcorder", NULL);
+            g_object_set(G_OBJECT(element), "stream-properties", properties, NULL);
+            gst_structure_free(properties);
+        }
     }
 }
 

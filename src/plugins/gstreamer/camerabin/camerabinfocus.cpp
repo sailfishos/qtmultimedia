@@ -129,23 +129,26 @@ void CameraBinFocus::setFocusMode(QCameraFocus::FocusModes mode)
 bool CameraBinFocus::isFocusModeSupported(QCameraFocus::FocusModes mode) const
 {
 #ifdef HAVE_GST_PHOTOGRAPHY
-    QCameraFocus::FocusModes supportedFocusModes;
-
     if (G_IS_OBJECT(m_session->cameraSource()) &&
             G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
             g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-focus-modes")) {
 
+        QCameraFocus::FocusModes supportedFocusModes;
         GVariant *focus_modes;
         g_object_get(G_OBJECT(m_session->cameraSource()), "supported-focus-modes", &focus_modes, NULL);
 
         if (focus_modes){
-            int focus_count = g_variant_n_children(focus_modes);
+            gsize focus_count;
+            const GstPhotographyFocusMode *modes = (const GstPhotographyFocusMode *)g_variant_get_fixed_array(focus_modes, &focus_count, sizeof(GstPhotographyFocusMode));
 
-            for (int i = 0; i < focus_count; i++) {
-                GVariant *mode = g_variant_get_child_value(focus_modes, i);
-                supportedFocusModes |= m_focusMap[static_cast<GstPhotographyFocusMode>(g_variant_get_int32(mode))];
-                g_variant_unref(mode);
+            for (gsize i = 0; i < focus_count; i++) {
+                QMap<GstPhotographyFocusMode, QCameraFocus::FocusMode>::const_iterator it = m_focusMap.find(modes[i]);
+
+                if (it != m_focusMap.end()) {
+                    supportedFocusModes |= it.value();
+                }
             }
+            g_variant_unref(focus_modes);
         }
         return mode & supportedFocusModes;
     }

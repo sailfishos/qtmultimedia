@@ -118,13 +118,13 @@ QVariantList CameraBinExposure::supportedParameterRange(ExposureParameter parame
             g_object_get(G_OBJECT(m_session->cameraSource()), "supported-iso-speeds", &iso_modes, NULL);
 
             if (iso_modes) {
-                int iso_mode_count = g_variant_n_children(iso_modes);
+                gsize iso_mode_count;
+                const gint32 *modes = (const gint32 *)g_variant_get_fixed_array(iso_modes, &iso_mode_count, sizeof(gint32));
 
-                for (int i = 0; i < iso_mode_count; i++) {
-                    GVariant *mode = g_variant_get_child_value(iso_modes, i);
-                    res << g_variant_get_int32(mode);
-                    g_variant_unref(mode);
+                for (gsize i = 0; i < iso_mode_count; i++) {
+                    res << modes[i];
                 }
+                g_variant_unref(iso_modes);
             }
         } else {
             res << 100 << 200 << 400;
@@ -145,13 +145,17 @@ QVariantList CameraBinExposure::supportedParameterRange(ExposureParameter parame
             g_object_get(G_OBJECT(m_session->cameraSource()), "supported-scene-modes", &exposure_modes, NULL);
 
             if (exposure_modes) {
-                int exposure_mode_count = g_variant_n_children(exposure_modes);
+                gsize exposure_mode_count;
+                const GstPhotographySceneMode *modes = (const GstPhotographySceneMode *)g_variant_get_fixed_array(exposure_modes, &exposure_mode_count, sizeof(GstPhotographySceneMode));
 
-                for (int i = 0; i < exposure_mode_count; i++) {
-                    GVariant *mode = g_variant_get_child_value(exposure_modes, i);
-                    res << m_mappedExposureValues[static_cast<GstPhotographySceneMode>(g_variant_get_int32(mode))];
-                    g_variant_unref(mode);
+                for (gsize i = 0; i < exposure_mode_count; i++) {
+                    QMap<GstPhotographySceneMode, QCameraExposure::ExposureMode>::const_iterator it = m_mappedExposureValues.find(modes[i]);
+
+                    if (it != m_mappedExposureValues.end()) {
+                        res << it.value();
+                    }
                 }
+                g_variant_unref(exposure_modes);
             }
         }
         break;

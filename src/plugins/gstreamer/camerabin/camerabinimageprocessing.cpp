@@ -56,15 +56,15 @@ CameraBinImageProcessing::CameraBinImageProcessing(CameraBinSession *session)
 {
 #ifdef HAVE_GST_PHOTOGRAPHY
     if (m_session->photography()) {
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_AUTO] = QCameraImageProcessing::WhiteBalanceAuto;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_DAYLIGHT] = QCameraImageProcessing::WhiteBalanceSunlight;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_CLOUDY] = QCameraImageProcessing::WhiteBalanceCloudy;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_SUNSET] = QCameraImageProcessing::WhiteBalanceSunset;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_TUNGSTEN] = QCameraImageProcessing::WhiteBalanceTungsten;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_FLUORESCENT] = QCameraImageProcessing::WhiteBalanceFluorescent;
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceAuto, GST_PHOTOGRAPHY_WB_MODE_AUTO);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceSunlight, GST_PHOTOGRAPHY_WB_MODE_DAYLIGHT);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceCloudy, GST_PHOTOGRAPHY_WB_MODE_CLOUDY);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceSunset, GST_PHOTOGRAPHY_WB_MODE_SUNSET);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceTungsten, GST_PHOTOGRAPHY_WB_MODE_TUNGSTEN);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceFluorescent, GST_PHOTOGRAPHY_WB_MODE_FLUORESCENT);
 #if GST_CHECK_VERSION(1, 14, 0)
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_WARM_FLUORESCENT] = QCameraImageProcessing::WhiteBalanceWarmFluorescent;
-        m_mappedWbValues[GST_PHOTOGRAPHY_WB_MODE_SHADE] = QCameraImageProcessing::WhiteBalanceShade;
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceWarmFluorescent, GST_PHOTOGRAPHY_WB_MODE_WARM_FLUORESCENT);
+        m_mappedWbValues.insert(QCameraImageProcessing::WhiteBalanceShade, GST_PHOTOGRAPHY_WB_MODE_SHADE);
 #endif
         unlockWhiteBalance();
     }
@@ -207,7 +207,6 @@ bool CameraBinImageProcessing::isWhiteBalanceModeSupported(QCameraImageProcessin
 {
 #ifdef HAVE_GST_PHOTOGRAPHY
     // get supported modes from GStreamer
-    QList<QCameraImageProcessing::WhiteBalanceMode> supportedWbModes;
     if (G_IS_OBJECT(m_session->cameraSource()) &&
             G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
             g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-wb-modes")) {
@@ -216,17 +215,23 @@ bool CameraBinImageProcessing::isWhiteBalanceModeSupported(QCameraImageProcessin
         g_object_get(G_OBJECT(m_session->cameraSource()), "supported-wb-modes", &supported_wb_modes, NULL);
 
         if (supported_wb_modes) {
-            int wb_count = g_variant_n_children(supported_wb_modes);
+            QMap<QCameraImageProcessing::WhiteBalanceMode, GstPhotographyWhiteBalanceMode>::const_iterator it = m_mappedWbValues.find(mode);
+            if (it != m_mappedWbValues.end()) {
+                gsize wb_count;
+                const GstPhotographyWhiteBalanceMode *modes = (const GstPhotographyWhiteBalanceMode *)g_variant_get_fixed_array(supported_wb_modes, &wb_count, sizeof(GstPhotographyWhiteBalanceMode));
 
-            for (int i = 0; i < wb_count; i++) {
-                GVariant *mode = g_variant_get_child_value(supported_wb_modes, i);
-                supportedWbModes << m_mappedWbValues[static_cast<GstPhotographyWhiteBalanceMode>(g_variant_get_int32(mode))];
-                g_variant_unref(mode);
+                for (gsize i = 0; i < wb_count; i++) {
+                    if (it.value() == modes[i]) {
+                        g_variant_unref(supported_wb_modes);
+                        return true;
+                    }
+                }
             }
+            g_variant_unref(supported_wb_modes);
         }
-        return supportedWbModes.contains(mode);
+        return false;
     }
-    return m_mappedWbValues.values().contains(mode);
+    return m_mappedWbValues.contains(mode);
 #else
     Q_UNUSED(mode);
     return false;
@@ -300,7 +305,6 @@ bool CameraBinImageProcessing::isParameterValueSupported(QCameraImageProcessingC
         const QCameraImageProcessing::ColorFilter filter = value.value<QCameraImageProcessing::ColorFilter>();
 #ifdef HAVE_GST_PHOTOGRAPHY
         // get supported effects from GStreamer
-        QList<QCameraImageProcessing::ColorFilter> supportedEffects;
         if (G_IS_OBJECT(m_session->cameraSource()) &&
                 G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
                 g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-color-tones")) {
@@ -309,14 +313,21 @@ bool CameraBinImageProcessing::isParameterValueSupported(QCameraImageProcessingC
             g_object_get(G_OBJECT(m_session->cameraSource()), "supported-color-tones", &supported_effects, NULL);
 
             if (supported_effects) {
-                int effect_count = g_variant_n_children(supported_effects);
+                QMap<QCameraImageProcessing::ColorFilter, GstPhotographyColorToneMode>::const_iterator it = m_filterMap.find(filter);
+                if (it != m_filterMap.end()) {
+                    gsize effect_count;
+                    const GstPhotographyColorToneMode *modes = (const GstPhotographyColorToneMode *)g_variant_get_fixed_array(supported_effects, &effect_count, sizeof(GstPhotographyColorToneMode));
 
-                for (int i = 0; i < effect_count; i++) {
-                    GVariant *mode = g_variant_get_child_value(supported_effects, i);
-                    supportedEffects << m_filterMap.keys().at(m_filterMap.values().indexOf((GstPhotographyColorToneMode)g_variant_get_int32(mode)));
+                    for (gsize i = 0; i < effect_count; i++) {
+                        if (it.value() == modes[i]) {
+                            g_variant_unref(supported_effects);
+                            return true;
+                        }
+                    }
                 }
+                g_variant_unref(supported_effects);
             }
-            return supportedEffects.contains(filter);
+            return false;
         }
         return m_filterMap.contains(filter);
 #else
@@ -474,7 +485,7 @@ void CameraBinImageProcessing::unlockWhiteBalance()
 {
     if (GstPhotography *photography = m_session->photography()) {
         gst_photography_set_white_balance_mode(
-                photography, m_mappedWbValues.key(m_whiteBalanceMode));
+                photography, m_mappedWbValues.value(m_whiteBalanceMode, GST_PHOTOGRAPHY_WB_MODE_AUTO));
     }
 }
 #endif

@@ -111,23 +111,26 @@ void CameraBinFlash::setFlashMode(QCameraExposure::FlashModes mode)
 bool CameraBinFlash::isFlashModeSupported(QCameraExposure::FlashModes mode) const
 {
 #ifdef HAVE_GST_PHOTOGRAPHY
-    //QList<QCameraExposure::FlashMode> supportedFlash;
-    QCameraExposure::FlashModes supportedModes;
     if (G_IS_OBJECT(m_session->cameraSource()) &&
             G_IS_OBJECT_CLASS(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource()))) &&
             g_object_class_find_property(G_OBJECT_GET_CLASS(G_OBJECT(m_session->cameraSource())), "supported-flash-modes")) {
 
+        QCameraExposure::FlashModes supportedModes;
         GVariant *flash_modes;
         g_object_get(G_OBJECT(m_session->cameraSource()), "supported-flash-modes", &flash_modes, NULL);
 
         if (flash_modes) {
-            int flash_count = g_variant_n_children(flash_modes);
+            gsize flash_count;
+            const GstPhotographyFlashMode *modes = (const GstPhotographyFlashMode *)g_variant_get_fixed_array(flash_modes, &flash_count, sizeof(GstPhotographyFlashMode));
 
-            for (int i = 0; i < flash_count; i++) {
-                GVariant *mode = g_variant_get_child_value(flash_modes, i);
-                supportedModes |= m_flashMap[static_cast<GstPhotographyFlashMode>(g_variant_get_int32(mode))];
-                g_variant_unref(mode);
+            for (gsize i = 0; i < flash_count; i++) {
+                QMap<GstPhotographyFlashMode, QCameraExposure::FlashMode>::const_iterator it = m_flashMap.find(modes[i]);
+
+                if (it != m_flashMap.end()) {
+                    supportedModes |= it.value();
+                }
             }
+            g_variant_unref(flash_modes);
         }
         // Disable FlashOn and FlashAuto for video capture mode, FlashTorch is used instead
         if (m_session->captureMode() == QCamera::CaptureVideo) {
@@ -144,7 +147,7 @@ bool CameraBinFlash::isFlashModeSupported(QCameraExposure::FlashModes mode) cons
     //torch light is allowed only in video capture mode
     if (m_session->captureMode() == QCamera::CaptureVideo) {
         if (mode == QCameraExposure::FlashTorch ||
-            mode == QCameraExposure::FlashTorch | QCameraExposure::FlashOff)
+            mode == (QCameraExposure::FlashTorch | QCameraExposure::FlashOff))
             return true;
     }
 

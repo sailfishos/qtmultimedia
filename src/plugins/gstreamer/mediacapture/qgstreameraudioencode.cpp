@@ -47,10 +47,12 @@ QGstreamerAudioEncode::QGstreamerAudioEncode(QObject *parent)
 
 #if defined(Q_WS_MAEMO_6)
     codecCandidates << "audio/AAC" << "audio/mpeg" << "audio/vorbis" << "audio/speex" << "audio/GSM"
-                    << "audio/PCM" << "audio/AMR" << "audio/AMR-WB" << "audio/FLAC";
+                    << "audio/PCM" << "audio/AMR" << "audio/AMR-WB" << "audio/FLAC"
+                    << "audio/opus";
 #else
     codecCandidates << "audio/mpeg" << "audio/vorbis" << "audio/speex" << "audio/GSM"
-                    << "audio/PCM" << "audio/AMR" << "audio/AMR-WB" << "audio/FLAC";
+                    << "audio/PCM" << "audio/AMR" << "audio/AMR-WB" << "audio/FLAC"
+                    << "audio/opus";
 #endif
 
 #if defined(Q_WS_MAEMO_6)
@@ -68,6 +70,7 @@ QGstreamerAudioEncode::QGstreamerAudioEncode(QObject *parent)
     m_elementNames["audio/PCM"] = "audioresample";
     m_elementNames["audio/FLAC"] = "flacenc";
     m_elementNames["audio/GSM"] = "gsmenc";
+    m_elementNames["audio/opus"] = "opusenc";
 
     m_codecOptions["audio/vorbis"] = QStringList() << "min-bitrate" << "max-bitrate";
     m_codecOptions["audio/mpeg"] = QStringList() << "mode";
@@ -76,6 +79,7 @@ QGstreamerAudioEncode::QGstreamerAudioEncode(QObject *parent)
     m_codecOptions["audio/PCM"] = QStringList();
     m_codecOptions["audio/AMR"] = QStringList();
     m_codecOptions["audio/AMR-WB"] = QStringList();
+    m_codecOptions["audio/opus"] = QStringList() << "dtx";
 
     foreach( const QByteArray& codecName, codecCandidates ) {
         QByteArray elementName = m_elementNames[codecName];

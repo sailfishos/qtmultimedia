@@ -821,7 +821,14 @@ void CameraBinSession::applyState()
     }
 
     if (!m_resourcePolicy.isResourcesGranted()) {
-        m_transientState = QCamera::UnloadedState;
+        const bool waitingForActiveResources =
+                m_requestedState == QCamera::ActiveState
+                && m_acceptedState == QCamera::LoadedState
+                && m_transientState == QCamera::LoadedState
+                && m_status == QCamera::LoadedStatus;
+
+        if (!waitingForActiveResources)
+            m_transientState = QCamera::UnloadedState;
     }
 
     if (m_transientState < m_acceptedState) {

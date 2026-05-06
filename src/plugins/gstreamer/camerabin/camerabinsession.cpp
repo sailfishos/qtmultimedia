@@ -71,6 +71,7 @@
 
 #include <QtGui/qimage.h>
 #include <QtCore/qdatetime.h>
+#include <QElapsedTimer>
 
 //#define CAMERABIN_DEBUG 1
 #define CAMERABIN_DEBUG_DUMP_BIN 1
@@ -108,6 +109,60 @@
     "video/x-raw-rgb, width = (int) 640, height = (int) 480"
 
 QT_BEGIN_NAMESPACE
+
+static QElapsedTimer &cameraStartupTimer()
+{
+    static QElapsedTimer timer;
+    static bool started = false;
+    if (!started) {
+        timer.start();
+        started = true;
+    }
+    return timer;
+}
+
+static const char *cameraStatusName(QCamera::Status status)
+{
+    switch (status) {
+    case QCamera::UnavailableStatus: return "UnavailableStatus";
+    case QCamera::UnloadedStatus: return "UnloadedStatus";
+    case QCamera::LoadingStatus: return "LoadingStatus";
+    case QCamera::UnloadingStatus: return "UnloadingStatus";
+    case QCamera::LoadedStatus: return "LoadedStatus";
+    case QCamera::StartingStatus: return "StartingStatus";
+    case QCamera::StoppingStatus: return "StoppingStatus";
+    case QCamera::ActiveStatus: return "ActiveStatus";
+    case QCamera::StandbyStatus: return "StandbyStatus";
+    }
+    return "UnknownStatus";
+}
+
+static const char *gstStateChangeReturnName(GstStateChangeReturn ret)
+{
+    switch (ret) {
+    case GST_STATE_CHANGE_FAILURE: return "FAILURE";
+    case GST_STATE_CHANGE_SUCCESS: return "SUCCESS";
+    case GST_STATE_CHANGE_ASYNC: return "ASYNC";
+    case GST_STATE_CHANGE_NO_PREROLL: return "NO_PREROLL";
+    }
+    return "UNKNOWN";
+}
+
+static bool cameraStartupLoggingEnabled()
+{
+    static const bool enabled = !qgetenv("CAMERA_STARTUP_LOG").isEmpty();
+    return enabled;
+}
+
+static void cameraStartupMark(const QString &message)
+{
+    if (!cameraStartupLoggingEnabled())
+        return;
+
+    qInfo("CAMERA_STARTUP qt-camerabin %lld ms %s",
+          static_cast<long long>(cameraStartupTimer().elapsed()),
+          qPrintable(message));
+}
 
 CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *parent)
     :QObject(parent),
@@ -473,10 +528,14 @@ GstElement *CameraBinSession::buildCameraSource()
     m_usingWrapperCameraBinSrc = false;
 
     GstElement *camSrc = 0;
-    g_object_get(G_OBJECT(m_camerabin), CAMERA_SOURCE_PROPERTY, &camSrc, NULL);
 
-    if (!m_cameraSrc && m_sourceFactory)
+    if (!m_cameraSrc && m_sourceFactory) {
+        cameraStartupMark(QStringLiteral("create camera source begin"));
         m_cameraSrc = gst_element_factory_create(m_sourceFactory, "camera_source");
+        cameraStartupMark(QStringLiteral("create camera source done"));
+    } else {
+        g_object_get(G_OBJECT(m_camerabin), CAMERA_SOURCE_PROPERTY, &camSrc, NULL);
+    }
 
     // If gstreamer has set a default source use it.
     if (!m_cameraSrc)
@@ -828,6 +887,7 @@ void CameraBinSession::load()
     if (m_status != QCamera::UnloadedStatus)
         return;
 
+    cameraStartupMark(QStringLiteral("load begin"));
     m_acceptedState = QCamera::LoadedState;
 
     m_status = QCamera::LoadingStatus;
@@ -850,7 +910,9 @@ void CameraBinSession::load()
 
     setupCaptureResolution();
 
-    gst_element_set_state(m_camerabin, GST_STATE_READY);
+    cameraStartupMark(QStringLiteral("load set GST_STATE_READY begin"));
+    GstStateChangeReturn ret = gst_element_set_state(m_camerabin, GST_STATE_READY);
+    cameraStartupMark(QStringLiteral("load set GST_STATE_READY returned %1").arg(QString::fromLatin1(gstStateChangeReturnName(ret))));
 
     emit statusChanged(m_status);
 }
@@ -860,6 +922,9 @@ void CameraBinSession::unload()
     if (m_status == QCamera::UnloadedStatus)
         return;
 
+    cameraStartupMark(QStringLiteral("unload begin status=%1 busy=%2")
+            .arg(QString::fromLatin1(cameraStatusName(m_status)))
+            .arg(int(m_busy)));
     bool changed = m_status != QCamera::UnloadingStatus;
     m_status = QCamera::UnloadingStatus;
 
@@ -886,6 +951,7 @@ void CameraBinSession::start()
     if (m_status != QCamera::LoadedStatus)
         return;
 
+    cameraStartupMark(QStringLiteral("start begin captureMode=%1").arg(int(m_captureMode)));
     m_acceptedState = QCamera::ActiveState;
 
     m_status = QCamera::StartingStatus;
@@ -916,7 +982,9 @@ void CameraBinSession::start()
 
     setupCaptureResolution();
 
-    gst_element_set_state(m_camerabin, GST_STATE_PLAYING);
+    cameraStartupMark(QStringLiteral("start set GST_STATE_PLAYING begin"));
+    GstStateChangeReturn ret = gst_element_set_state(m_camerabin, GST_STATE_PLAYING);
+    cameraStartupMark(QStringLiteral("start set GST_STATE_PLAYING returned %1").arg(QString::fromLatin1(gstStateChangeReturnName(ret))));
 
     emit statusChanged(m_status);
 }
@@ -977,6 +1045,7 @@ void CameraBinSession::updateReadyForCapture(GObject *o, GParamSpec *p, gpointer
     g_object_get(o, "ready-for-capture", &ready, NULL);
 
     if (session->m_reportedReadyForCapture.fetchAndStoreRelaxed(ready) != ready) {
+        cameraStartupMark(QStringLiteral("ready-for-capture changed ready=%1").arg(ready));
         QMetaObject::invokeMethod(session, "updateCaptureStatus", Qt::QueuedConnection);
     }
 }

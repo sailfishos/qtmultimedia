@@ -57,7 +57,12 @@
 #include <QDebug>
 
 #if GST_CHECK_VERSION(1,0,0)
+// Use playbin3 for adaptive streaming support
+#if GST_CHECK_VERSION(1,10,0)
+# define QT_GSTREAMER_PLAYBIN_ELEMENT_NAME "playbin3"
+#else
 # define QT_GSTREAMER_PLAYBIN_ELEMENT_NAME "playbin"
+#endif
 # define QT_GSTREAMER_CAMERABIN_ELEMENT_NAME "camerabin"
 # define QT_GSTREAMER_COLORCONVERSION_ELEMENT_NAME "videoconvert"
 # define QT_GSTREAMER_RAW_AUDIO_MIME "audio/x-raw"

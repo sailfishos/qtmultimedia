@@ -47,6 +47,7 @@
 #include <gst/gstvalue.h>
 #include <gst/base/gstbasesrc.h>
 #include <gst/pbutils/missing-plugins.h>
+#include <glib-object.h>
 
 #include <QtMultimedia/qmediametadata.h>
 #include <QtCore/qdatetime.h>
@@ -125,6 +126,7 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
 #if defined(HAVE_GST_APPSRC)
      m_appSrc(0),
 #endif
+     m_streamCollection(0),
      m_videoProbe(0),
      m_audioProbe(0),
      m_volume(100),
@@ -140,7 +142,9 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
      m_sourceType(UnknownSrc),
      m_everPlayed(false),
      m_isLiveSource(false),
-     m_isPlaylist(false)
+     m_isPlaylist(false),
+     m_videoResolutionProbeId(0),
+     m_hasPendingVideoResolutionTagUpdate(false)
 {
     gboolean result = gst_type_find_register(0, "playlist", GST_RANK_MARGINAL, playlistTypeFindFunction, 0, 0, this, 0);
     Q_ASSERT(result == TRUE);
@@ -219,6 +223,19 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
     gst_bin_add_many(GST_BIN(m_videoOutputBin), m_videoIdentity, m_nullVideoSink, NULL);
     gst_element_link(m_videoIdentity, m_nullVideoSink);
 
+#if GST_CHECK_VERSION(1,0,0)
+    GstPad *capsPad = gst_element_get_static_pad(m_videoIdentity, "src");
+    if (capsPad) {
+        m_videoResolutionProbeId = gst_pad_add_probe(
+                    capsPad,
+                    GstPadProbeType(GST_PAD_PROBE_TYPE_EVENT_DOWNSTREAM | GST_PAD_PROBE_TYPE_BUFFER),
+                    handleVideoResolutionTagProbe,
+                    this,
+                    NULL);
+        gst_object_unref(GST_OBJECT(capsPad));
+    }
+#endif
+
     m_videoSink = m_nullVideoSink;
 
     // add ghostpads
@@ -244,9 +261,20 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
             g_signal_connect(G_OBJECT(m_playbin), "notify::mute", G_CALLBACK(handleMutedChange), this);
         }
 
-        g_signal_connect(G_OBJECT(m_playbin), "video-changed", G_CALLBACK(handleStreamsChange), this);
-        g_signal_connect(G_OBJECT(m_playbin), "audio-changed", G_CALLBACK(handleStreamsChange), this);
-        g_signal_connect(G_OBJECT(m_playbin), "text-changed", G_CALLBACK(handleStreamsChange), this);
+        const auto connectStreamChange = [this](const char *signalName, const char *propertyName) {
+            if (signalName && g_signal_lookup(signalName, G_OBJECT_TYPE(m_playbin))) {
+                g_signal_connect(G_OBJECT(m_playbin), signalName, G_CALLBACK(handleStreamsChange), this);
+            } else if (propertyName &&
+                       g_object_class_find_property(G_OBJECT_GET_CLASS(m_playbin), propertyName)) {
+                const QByteArray notifySignal = QByteArray("notify::") + propertyName;
+                g_signal_connect(G_OBJECT(m_playbin), notifySignal.constData(),
+                                 G_CALLBACK(handleStreamsNotify), this);
+            }
+        };
+
+        connectStreamChange("video-changed", "current-video");
+        connectStreamChange("audio-changed", "current-audio");
+        connectStreamChange("text-changed", "current-text");
 
 #if defined(HAVE_GST_APPSRC)
         g_signal_connect(G_OBJECT(m_playbin), "deep-notify::source", G_CALLBACK(configureAppSrcElement), this);
@@ -256,6 +284,22 @@ QGstreamerPlayerSession::QGstreamerPlayerSession(QObject *parent)
 
 QGstreamerPlayerSession::~QGstreamerPlayerSession()
 {
+    if (m_streamCollection) {
+        gst_object_unref(m_streamCollection);
+        m_streamCollection = 0;
+    }
+
+    if (m_videoResolutionProbeId && m_videoIdentity) {
+#if GST_CHECK_VERSION(1,0,0)
+        GstPad *capsPad = gst_element_get_static_pad(m_videoIdentity, "src");
+        if (capsPad) {
+            gst_pad_remove_probe(capsPad, m_videoResolutionProbeId);
+            gst_object_unref(GST_OBJECT(capsPad));
+        }
+#endif
+        m_videoResolutionProbeId = 0;
+    }
+
     if (m_playbin) {
         stop();
 
@@ -318,6 +362,11 @@ void QGstreamerPlayerSession::loadFromStream(const QNetworkRequest &request, QIO
 
         g_object_set(G_OBJECT(m_playbin), "uri", "appsrc://", NULL);
 
+        if (m_streamCollection) {
+            gst_object_unref(m_streamCollection);
+            m_streamCollection = 0;
+        }
+
         if (!m_streamTypes.isEmpty()) {
             m_streamProperties.clear();
             m_streamTypes.clear();
@@ -350,6 +399,11 @@ void QGstreamerPlayerSession::loadFromUri(const QNetworkRequest &request)
         emit tagsChanged();
 
         g_object_set(G_OBJECT(m_playbin), "uri", m_request.url().toEncoded().constData(), NULL);
+
+        if (m_streamCollection) {
+            gst_object_unref(m_streamCollection);
+            m_streamCollection = 0;
+        }
 
         if (!m_streamTypes.isEmpty()) {
             m_streamProperties.clear();
@@ -498,6 +552,94 @@ bool QGstreamerPlayerSession::isMuted() const
 bool QGstreamerPlayerSession::isAudioAvailable() const
 {
     return m_audioAvailable;
+}
+
+static void parseVideoResolutionTagCaps(GstCaps *caps, QSize *size, QSize *aspectRatio)
+{
+    if (!caps || !size || !aspectRatio)
+        return;
+
+    const GstStructure *structure = gst_caps_get_structure(caps, 0);
+    gst_structure_get_int(structure, "width", &size->rwidth());
+    gst_structure_get_int(structure, "height", &size->rheight());
+
+    gint aspectNum = 0;
+    gint aspectDenum = 0;
+    if (!size->isEmpty() && gst_structure_get_fraction(
+                structure, "pixel-aspect-ratio", &aspectNum, &aspectDenum)) {
+        if (aspectDenum > 0)
+            *aspectRatio = QSize(aspectNum, aspectDenum);
+    }
+}
+
+#if GST_CHECK_VERSION(1,0,0)
+GstPadProbeReturn QGstreamerPlayerSession::handleVideoResolutionTagProbe(
+        GstPad *, GstPadProbeInfo *info, gpointer user_data)
+#else
+gboolean QGstreamerPlayerSession::handleVideoResolutionTagProbe(
+        GstPad *, GstEvent *event, gpointer user_data)
+#endif
+{
+    QGstreamerPlayerSession *session = reinterpret_cast<QGstreamerPlayerSession *>(user_data);
+#if GST_CHECK_VERSION(1,0,0)
+    GstEvent *event = gst_pad_probe_info_get_event(info);
+    GstBuffer *buffer = gst_pad_probe_info_get_buffer(info);
+#else
+    GstBuffer *buffer = 0;
+#endif
+
+    if (!session) {
+#if GST_CHECK_VERSION(1,0,0)
+        return GST_PAD_PROBE_OK;
+#else
+        return TRUE;
+#endif
+    }
+
+    if (event && GST_EVENT_TYPE(event) == GST_EVENT_CAPS) {
+        GstCaps *caps = 0;
+        QSize size;
+        QSize aspectRatio;
+
+        gst_event_parse_caps(event, &caps);
+        parseVideoResolutionTagCaps(caps, &size, &aspectRatio);
+
+        QMutexLocker locker(&session->m_videoResolutionTagLock);
+        session->m_pendingVideoResolution = size;
+        session->m_pendingVideoAspectRatio = aspectRatio;
+        session->m_hasPendingVideoResolutionTagUpdate = true;
+    } else if (buffer) {
+        QSize size;
+        QSize aspectRatio;
+
+        {
+            QMutexLocker locker(&session->m_videoResolutionTagLock);
+            if (!session->m_hasPendingVideoResolutionTagUpdate) {
+#if GST_CHECK_VERSION(1,0,0)
+                return GST_PAD_PROBE_OK;
+#else
+                return TRUE;
+#endif
+            }
+
+            size = session->m_pendingVideoResolution;
+            aspectRatio = session->m_pendingVideoAspectRatio;
+            session->m_hasPendingVideoResolutionTagUpdate = false;
+            session->m_pendingVideoResolution = QSize();
+            session->m_pendingVideoAspectRatio = QSize();
+        }
+
+        QMetaObject::invokeMethod(session, "updateVideoResolutionTagFromCapsData",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QSize, size),
+                                  Q_ARG(QSize, aspectRatio));
+    }
+
+#if GST_CHECK_VERSION(1,0,0)
+    return GST_PAD_PROBE_OK;
+#else
+    return TRUE;
+#endif
 }
 
 #if GST_CHECK_VERSION(1,0,0)
@@ -1080,6 +1222,22 @@ bool QGstreamerPlayerSession::processBusMessage(const QGstreamerMessage &message
         } else if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_DURATION) {
             updateDuration();
         }
+#if GST_CHECK_VERSION(1,0,0)
+        else if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_STREAM_COLLECTION) {
+            qDebug() << "GST_MESSAGE_STREAM_COLLECTION";
+            GstStreamCollection *collection = NULL;
+            gst_message_parse_stream_collection(gm, &collection);
+            if (collection) {
+                if (m_streamCollection)
+                    gst_object_unref(m_streamCollection);
+                m_streamCollection = (GstStreamCollection *)gst_object_ref(collection);
+                QMetaObject::invokeMethod(this, "getStreamsInfo", Qt::QueuedConnection);
+            }
+        } else if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_STREAMS_SELECTED) {
+            QMetaObject::invokeMethod(this, "streamsChanged", Qt::QueuedConnection);
+            QMetaObject::invokeMethod(this, "getStreamsInfo", Qt::QueuedConnection);
+        }
+#endif
 
 #ifdef DEBUG_PLAYBIN
         if (m_sourceType == MMSSrc && qstrcmp(GST_OBJECT_NAME(GST_MESSAGE_SRC(gm)), "source") == 0) {
@@ -1371,66 +1529,127 @@ void QGstreamerPlayerSession::getStreamsInfo()
     m_streamTypes.clear();
     m_playbin2StreamOffset.clear();
 
+#if GST_CHECK_VERSION(1,0,0)
+    GstStreamCollection *collection = m_streamCollection;
+    if (collection) {
+        gst_object_ref(collection);
+
+        int audioStreamsCount = 0;
+        int videoStreamsCount = 0;
+        int textStreamsCount = 0;
+
+        const guint count = gst_stream_collection_get_size(collection);
+        for (guint i = 0; i < count; ++i) {
+            GstStream *stream = gst_stream_collection_get_stream(collection, i);
+            if (!stream)
+                continue;
+
+            GstStreamType gstType = gst_stream_get_stream_type(stream);
+            QMediaStreamsControl::StreamType streamType = QMediaStreamsControl::AudioStream;
+            if (gstType & GST_STREAM_TYPE_VIDEO) {
+                streamType = QMediaStreamsControl::VideoStream;
+                ++videoStreamsCount;
+            } else if (gstType & GST_STREAM_TYPE_TEXT) {
+                streamType = QMediaStreamsControl::SubPictureStream;
+                ++textStreamsCount;
+            } else if (gstType & GST_STREAM_TYPE_AUDIO) {
+                streamType = QMediaStreamsControl::AudioStream;
+                ++audioStreamsCount;
+            } else {
+                continue;
+            }
+
+            m_streamTypes.append(streamType);
+
+            QMap<QString, QVariant> streamProperties;
+            const GstTagList *tags = gst_stream_get_tags(stream);
+            if (tags) {
+                gchar *languageCode = 0;
+                if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &languageCode))
+                    streamProperties[QMediaMetaData::Language] = QString::fromUtf8(languageCode);
+                g_free(languageCode);
+            }
+            m_streamProperties.append(streamProperties);
+        }
+
+        haveAudio = audioStreamsCount > 0;
+        haveVideo = videoStreamsCount > 0;
+
+        m_playbin2StreamOffset[QMediaStreamsControl::AudioStream] = 0;
+        m_playbin2StreamOffset[QMediaStreamsControl::VideoStream] = audioStreamsCount;
+        m_playbin2StreamOffset[QMediaStreamsControl::SubPictureStream] = audioStreamsCount + videoStreamsCount;
+
+        gst_object_unref(collection);
+    }
+#endif
+
+    if (!m_streamTypes.isEmpty()) {
+        bool emitAudioChanged = (haveAudio != m_audioAvailable);
+        bool emitVideoChanged = (haveVideo != m_videoAvailable);
+
+        m_audioAvailable = haveAudio;
+        m_videoAvailable = haveVideo;
+
+        if (emitAudioChanged)
+            emit audioAvailableChanged(m_audioAvailable);
+        if (emitVideoChanged)
+            emit videoAvailableChanged(m_videoAvailable);
+
+        if (oldProperties != m_streamProperties || oldTypes != m_streamTypes || oldOffset != m_playbin2StreamOffset) {
+#ifdef DEBUG_PLAYBIN
+            qDebug() << "streams changed" << m_streamProperties << m_streamTypes << m_playbin2StreamOffset;
+#endif
+            emit streamsChanged();
+        }
+        return;
+    }
+
     gint audioStreamsCount = 0;
     gint videoStreamsCount = 0;
     gint textStreamsCount = 0;
 
-    g_object_get(G_OBJECT(m_playbin), "n-audio", &audioStreamsCount, NULL);
-    g_object_get(G_OBJECT(m_playbin), "n-video", &videoStreamsCount, NULL);
-    g_object_get(G_OBJECT(m_playbin), "n-text", &textStreamsCount, NULL);
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_playbin), "n-audio"))
+        g_object_get(G_OBJECT(m_playbin), "n-audio", &audioStreamsCount, NULL);
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_playbin), "n-video"))
+        g_object_get(G_OBJECT(m_playbin), "n-video", &videoStreamsCount, NULL);
+    if (g_object_class_find_property(G_OBJECT_GET_CLASS(m_playbin), "n-text"))
+        g_object_get(G_OBJECT(m_playbin), "n-text", &textStreamsCount, NULL);
 
     haveAudio = audioStreamsCount > 0;
     haveVideo = videoStreamsCount > 0;
 
     m_playbin2StreamOffset[QMediaStreamsControl::AudioStream] = 0;
     m_playbin2StreamOffset[QMediaStreamsControl::VideoStream] = audioStreamsCount;
-    m_playbin2StreamOffset[QMediaStreamsControl::SubPictureStream] = audioStreamsCount+videoStreamsCount;
+    m_playbin2StreamOffset[QMediaStreamsControl::SubPictureStream] = audioStreamsCount + videoStreamsCount;
 
-    for (int i=0; i<audioStreamsCount; i++)
-        m_streamTypes.append(QMediaStreamsControl::AudioStream);
+    auto appendStreams = [&](QMediaStreamsControl::StreamType streamType, int count, const char *tagSignal) {
+        for (int i = 0; i < count; ++i) {
+            m_streamTypes.append(streamType);
 
-    for (int i=0; i<videoStreamsCount; i++)
-        m_streamTypes.append(QMediaStreamsControl::VideoStream);
-
-    for (int i=0; i<textStreamsCount; i++)
-        m_streamTypes.append(QMediaStreamsControl::SubPictureStream);
-
-    for (int i=0; i<m_streamTypes.count(); i++) {
-        QMediaStreamsControl::StreamType streamType = m_streamTypes[i];
-        QMap<QString, QVariant> streamProperties;
-
-        int streamIndex = i - m_playbin2StreamOffset[streamType];
-
-        GstTagList *tags = 0;
-        switch (streamType) {
-        case QMediaStreamsControl::AudioStream:
-            g_signal_emit_by_name(G_OBJECT(m_playbin), "get-audio-tags", streamIndex, &tags);
-            break;
-        case QMediaStreamsControl::VideoStream:
-            g_signal_emit_by_name(G_OBJECT(m_playbin), "get-video-tags", streamIndex, &tags);
-            break;
-        case QMediaStreamsControl::SubPictureStream:
-            g_signal_emit_by_name(G_OBJECT(m_playbin), "get-text-tags", streamIndex, &tags);
-            break;
-        default:
-            break;
-        }
+            QMap<QString, QVariant> streamProperties;
+            GstTagList *tags = 0;
+            if (tagSignal)
+                g_signal_emit_by_name(G_OBJECT(m_playbin), tagSignal, i, &tags);
 #if GST_CHECK_VERSION(1,0,0)
-        if (tags && GST_IS_TAG_LIST(tags)) {
+            if (tags && GST_IS_TAG_LIST(tags)) {
 #else
-        if (tags && gst_is_tag_list(tags)) {
+            if (tags && gst_is_tag_list(tags)) {
 #endif
-            gchar *languageCode = 0;
-            if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &languageCode))
-                streamProperties[QMediaMetaData::Language] = QString::fromUtf8(languageCode);
+                gchar *languageCode = 0;
+                if (gst_tag_list_get_string(tags, GST_TAG_LANGUAGE_CODE, &languageCode))
+                    streamProperties[QMediaMetaData::Language] = QString::fromUtf8(languageCode);
 
-            //qDebug() << "language for setream" << i << QString::fromUtf8(languageCode);
-            g_free (languageCode);
-            gst_tag_list_free(tags);
+                g_free(languageCode);
+                gst_tag_list_free(tags);
+            }
+
+            m_streamProperties.append(streamProperties);
         }
+    };
 
-        m_streamProperties.append(streamProperties);
-    }
+    appendStreams(QMediaStreamsControl::AudioStream, audioStreamsCount, "get-audio-tags");
+    appendStreams(QMediaStreamsControl::VideoStream, videoStreamsCount, "get-video-tags");
+    appendStreams(QMediaStreamsControl::SubPictureStream, textStreamsCount, "get-text-tags");
 
     bool emitAudioChanged = (haveAudio != m_audioAvailable);
     bool emitVideoChanged = (haveVideo != m_videoAvailable);
@@ -1445,8 +1664,12 @@ void QGstreamerPlayerSession::getStreamsInfo()
         emit videoAvailableChanged(m_videoAvailable);
     }
 
-    if (oldProperties != m_streamProperties || oldTypes != m_streamTypes || oldOffset != m_playbin2StreamOffset)
+    if (oldProperties != m_streamProperties || oldTypes != m_streamTypes || oldOffset != m_playbin2StreamOffset) {
+#ifdef DEBUG_PLAYBIN
+        qDebug() << "streams changed" << m_streamProperties << m_streamTypes << m_playbin2StreamOffset;
+#endif
         emit streamsChanged();
+    }
 }
 
 void QGstreamerPlayerSession::updateVideoResolutionTag()
@@ -1473,9 +1696,6 @@ void QGstreamerPlayerSession::updateVideoResolutionTag()
         }
         gst_caps_unref(caps);
     }
-
-    gst_object_unref(GST_OBJECT(pad));
-
     QSize currentSize = m_tags.value("resolution").toSize();
     QSize currentAspectRatio = m_tags.value("pixel-aspect-ratio").toSize();
 
@@ -1490,7 +1710,35 @@ void QGstreamerPlayerSession::updateVideoResolutionTag()
             if (!aspectRatio.isEmpty())
                 m_tags.insert("pixel-aspect-ratio", QVariant(aspectRatio));
         }
+#ifdef DEBUG_PLAYBIN
+        qDebug() << "resolution changed" << m_tags;
+#endif
+        emit tagsChanged();
+    }
 
+    gst_object_unref(GST_OBJECT(pad));
+}
+
+void QGstreamerPlayerSession::updateVideoResolutionTagFromCapsData(const QSize &size,
+                                                                   const QSize &aspectRatio)
+{
+    QSize currentSize = m_tags.value("resolution").toSize();
+    QSize currentAspectRatio = m_tags.value("pixel-aspect-ratio").toSize();
+
+    if (currentSize != size || currentAspectRatio != aspectRatio) {
+        if (aspectRatio.isEmpty())
+            m_tags.remove("pixel-aspect-ratio");
+
+        if (size.isEmpty()) {
+            m_tags.remove("resolution");
+        } else {
+            m_tags.insert("resolution", QVariant(size));
+            if (!aspectRatio.isEmpty())
+                m_tags.insert("pixel-aspect-ratio", QVariant(aspectRatio));
+        }
+#ifdef DEBUG_PLAYBIN
+        qDebug() << "resolution changed" << m_tags;
+#endif
         emit tagsChanged();
     }
 }
@@ -1769,6 +2017,18 @@ void QGstreamerPlayerSession::handleStreamsChange(GstBin *bin, gpointer user_dat
     Q_UNUSED(bin);
 
     QGstreamerPlayerSession* session = reinterpret_cast<QGstreamerPlayerSession*>(user_data);
+    QMetaObject::invokeMethod(session, "getStreamsInfo", Qt::QueuedConnection);
+}
+
+void QGstreamerPlayerSession::handleStreamsNotify(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    Q_UNUSED(object);
+    Q_UNUSED(pspec);
+
+    QGstreamerPlayerSession* session = reinterpret_cast<QGstreamerPlayerSession*>(user_data);
+    if (!session)
+        return;
+
     QMetaObject::invokeMethod(session, "getStreamsInfo", Qt::QueuedConnection);
 }
 

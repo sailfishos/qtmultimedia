@@ -36,6 +36,7 @@
 
 #include <QObject>
 #include <QtCore/qmutex.h>
+#include <QtCore/qsize.h>
 #include <QtNetwork/qnetworkrequest.h>
 #include "qgstreamerplayercontrol.h"
 #include <private/qgstreamerbushelper_p.h>
@@ -162,6 +163,7 @@ private slots:
     void finishVideoOutputChange();
     void updateVideoRenderer();
     void updateVideoResolutionTag();
+    void updateVideoResolutionTagFromCapsData(const QSize &size, const QSize &aspectRatio);
     void updateVolume();
     void updateMuted();
     void updateDuration();
@@ -175,7 +177,13 @@ private:
 #endif
     static void handleElementAdded(GstBin *bin, GstElement *element, QGstreamerPlayerSession *session);
     static void handleStreamsChange(GstBin *bin, gpointer user_data);
+    static void handleStreamsNotify(GObject *object, GParamSpec *pspec, gpointer user_data);
     static GstAutoplugSelectResult handleAutoplugSelect(GstBin *bin, GstPad *pad, GstCaps *caps, GstElementFactory *factory, QGstreamerPlayerSession *session);
+#if GST_CHECK_VERSION(1,0,0)
+    static GstPadProbeReturn handleVideoResolutionTagProbe(GstPad *pad, GstPadProbeInfo *info, gpointer user_data);
+#else
+    static gboolean handleVideoResolutionTagProbe(GstPad *pad, GstEvent *event, gpointer user_data);
+#endif
 
     void processInvalidMedia(QMediaPlayer::Error errorCode, const QString& errorString);
 
@@ -220,6 +228,7 @@ private:
     QList< QMap<QString,QVariant> > m_streamProperties;
     QList<QMediaStreamsControl::StreamType> m_streamTypes;
     QMap<QMediaStreamsControl::StreamType, int> m_playbin2StreamOffset;
+    GstStreamCollection *m_streamCollection;
 
     QGstreamerVideoProbeControl *m_videoProbe;
     QGstreamerAudioProbeControl *m_audioProbe;
@@ -251,6 +260,11 @@ private:
 
     bool m_isPlaylist;
     gulong pad_probe_id;
+    gulong m_videoResolutionProbeId;
+    QSize m_pendingVideoResolution;
+    QSize m_pendingVideoAspectRatio;
+    bool m_hasPendingVideoResolutionTagUpdate;
+    mutable QMutex m_videoResolutionTagLock;
 };
 
 QT_END_NAMESPACE

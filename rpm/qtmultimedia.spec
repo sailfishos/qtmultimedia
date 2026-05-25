@@ -1,7 +1,7 @@
 Name:       qt5-qtmultimedia
 Summary:    Qt Multimedia module
 Version:    5.6.2
-Release:    1%{?dist}
+Release:    0
 License:    (LGPLv2 or LGPLv3) with exception or GPLv3 or Qt Commercial
 URL:        https://www.qt.io/
 Source0:    %{name}-%{version}.tar.bz2
@@ -140,26 +140,29 @@ This package contains the egl video node plugin.
 %setup -q -n %{name}-%{version}
 
 %build
-export QTDIR=/usr/share/qt5
 touch .git
 
-%qmake5 GST_VERSION=1.0 QT.widgets.name= DEFINES+=QT_NO_WIDGETS -r "DEFINES+=NEMO_AUDIO" "DEFINES+=DISABLE_V4L" CONFIG+=config_pulseaudio
+%qmake5 GST_VERSION=1.0 QT.widgets.name= \
+        DEFINES+=QT_NO_WIDGETS \
+        -r "DEFINES+=NEMO_AUDIO" "DEFINES+=DISABLE_V4L" \
+        CONFIG+=config_pulseaudio
+
 make %{?_smp_mflags}
 
 %install
-rm -rf %{buildroot}
+
 %qmake5_install
 # Remove unneeded .la files
-rm -f %{buildroot}/%{_libdir}/*.la
+rm -f %{buildroot}/%{_qt5_libdir}/*.la
 # Fix wrong path in pkgconfig files
-find %{buildroot}%{_libdir}/pkgconfig -type f -name '*.pc' \
+find %{buildroot}%{_qt5_libdir}/pkgconfig -type f -name '*.pc' \
 -exec perl -pi -e "s, -L%{_builddir}/?\S+,,g" {} \;
 # Fix wrong path in prl files
-find %{buildroot}%{_libdir} -type f -name '*.prl' \
+find %{buildroot}%{_qt5_libdir} -type f -name '*.prl' \
 -exec sed -i -e "/^QMAKE_PRL_BUILD_DIR/d;s/\(QMAKE_PRL_LIBS =\).*/\1/" {} \;
 #
 # We don't need qt5/Qt/
-rm -rf %{buildroot}/%{_includedir}/qt5/Qt
+rm -rf %{buildroot}/%{_qt5_includedir}/Qt
 
 
 
@@ -169,15 +172,11 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 
 
 
-%post
-/sbin/ldconfig
-%postun
-/sbin/ldconfig
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
 
-%post gsttools
-/sbin/ldconfig
-%postun gsttools
-/sbin/ldconfig
+%post gsttools -p /sbin/ldconfig
+%postun gsttools -p /sbin/ldconfig
 
 
 
@@ -187,67 +186,67 @@ rm -rf %{buildroot}/%{_includedir}/qt5/Qt
 %defattr(-,root,root,-)
 %license LICENSE.LGPLv* LGPL_EXCEPTION.txt
 %license LICENSE.GPLv3 LICENSE.FDL
-%{_libdir}/libQt5Multimedia.so.5
-%{_libdir}/libQt5Multimedia.so.5.*
-%{_libdir}/libQt5MultimediaQuick_p.so.5
-%{_libdir}/libQt5MultimediaQuick_p.so.5.*
+%{_qt5_libdir}/libQt5Multimedia.so.5
+%{_qt5_libdir}/libQt5Multimedia.so.5.*
+%{_qt5_libdir}/libQt5MultimediaQuick_p.so.5
+%{_qt5_libdir}/libQt5MultimediaQuick_p.so.5.*
 
 %files devel
 %defattr(-,root,root,-)
-%{_libdir}/libQt5Multimedia.so
-%{_libdir}/libQt5MultimediaQuick_p.so
-%{_libdir}/libqgsttools_p.so
-%{_libdir}/libQt5Multimedia.prl
-%{_libdir}/libQt5MultimediaQuick_p.prl
-%{_libdir}/libqgsttools_p.prl
-%{_libdir}/pkgconfig/*
-%{_includedir}/qt5/*
-%{_datadir}/qt5/mkspecs/
-%{_libdir}/cmake/
+%{_qt5_libdir}/libQt5Multimedia.so
+%{_qt5_libdir}/libQt5MultimediaQuick_p.so
+%{_qt5_libdir}/libqgsttools_p.so
+%{_qt5_libdir}/libQt5Multimedia.prl
+%{_qt5_libdir}/libQt5MultimediaQuick_p.prl
+%{_qt5_libdir}/libqgsttools_p.prl
+%{_qt5_libdir}/pkgconfig/*
+%{_qt5_includedir}/*
+%{_qt5_archdatadir}/mkspecs/
+%{_qt5_libdir}/cmake/
 
 
 %files -n qt5-qtdeclarative-import-multimedia
 %defattr(-,root,root,-)
-%{_libdir}/qt5/qml/QtMultimedia/
+%{_qt5_archdatadir}/qml/QtMultimedia/
 
 %files gsttools
 %defattr(-,root,root,-)
-%{_libdir}/libqgsttools_p.so.1
-%{_libdir}/libqgsttools_p.so.1.*
+%{_qt5_libdir}/libqgsttools_p.so.1
+%{_qt5_libdir}/libqgsttools_p.so.1.*
 
 %files plugin-mediaservice-gstaudiodecoder
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/mediaservice/libgstaudiodecoder.so
+%{_qt5_plugindir}/mediaservice/libgstaudiodecoder.so
 
 %files plugin-mediaservice-gstcamerabin
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/mediaservice/libgstcamerabin.so
+%{_qt5_plugindir}/mediaservice/libgstcamerabin.so
 
 %files plugin-mediaservice-gstmediacapture
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/mediaservice/libgstmediacapture.so
+%{_qt5_plugindir}/mediaservice/libgstmediacapture.so
 
 %files plugin-mediaservice-gstmediaplayer
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/mediaservice/libgstmediaplayer.so
+%{_qt5_plugindir}/mediaservice/libgstmediaplayer.so
 
 %files plugin-playlistformats-m3u
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/playlistformats/libqtmultimedia_m3u.so
+%{_qt5_plugindir}/playlistformats/libqtmultimedia_m3u.so
 
 %files plugin-resourcepolicy-resourceqt
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/resourcepolicy/libresourceqt.so
+%{_qt5_plugindir}/resourcepolicy/libresourceqt.so
 
 %files plugin-audio-pulseaudio
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/audio/libqtmedia_pulse.so
+%{_qt5_plugindir}/audio/libqtmedia_pulse.so
 
 %files plugin-audio-alsa
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/audio/libqtaudio_alsa.so
+%{_qt5_plugindir}/audio/libqtaudio_alsa.so
 
 %files plugin-video-eglvideonode
 %defattr(-,root,root,-)
-%{_libdir}/qt5/plugins/video/videonode/libeglvideonode.so
+%{_qt5_plugindir}/video/videonode/libeglvideonode.so
 
